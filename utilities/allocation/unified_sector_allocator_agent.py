@@ -80,7 +80,7 @@ class UnifiedSectorAllocatorAgent:
                 continue
 
             # ---------- No data / no model ----------
-            if sector in ["OIL & GAS", "HEALTHCARE"]:
+            if sector in ["ENERGY", "HEALTHCARE"]:
                 df = data["df"]
                 row = df.iloc[-1]
                 sector_trend = check_trend(df, self.trend_lookback)

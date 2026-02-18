@@ -46,7 +46,7 @@ def get_propositions(present_weights=None):
       if sector in ["GOLDBEES", "SILVERBEES"]:
           stock_based.append(sector)
       else:
-        if sector in ["OIL & GAS"]:
+        if sector in ["ENERGY"]:
           sector = "ENERGY"
         top_gainers_sector = top_gainers_in_sector(f"NIFTY%20{sector}")
         top_gainers_sector.head()
