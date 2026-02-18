@@ -16,7 +16,7 @@ def get_feed_data(models, datasets, feature_sets):
     "Private Bank": "NIFTY PRIVATE BANK",
     "PSU Bank": "NIFTY PSU BANK",
     "Consumer Durables": "NIFTY CONSUMER DURABLES",
-    "Oil and Gas": "NIFTY OIL & GAS",
+    "Oil and Gas": "NIFTY ENERGY",
     "Healthcare": "NIFTY HEALTHCARE"
   }
   
@@ -30,8 +30,8 @@ def get_feed_data(models, datasets, feature_sets):
     feed_data[sector_corrected] = {}
     if sector in ["SILVERBEES","GOLDBEES"]:
       feed_data[sector_corrected]["df"] = datasets[sector]
-    elif sector in ["NIFTY OIL & GAS","NIFTY HEALTHCARE"]:
-      if sector == "NIFTY OIL & GAS":
+    elif sector in ["NIFTY ENERGY","NIFTY HEALTHCARE"]:
+      if sector == "NIFTY ENERGY":
         feed_data[sector_corrected]["df"] = get_gas_and_oil_trend()
       else:
         feed_data[sector_corrected]["df"] = get_healthcare_trend()

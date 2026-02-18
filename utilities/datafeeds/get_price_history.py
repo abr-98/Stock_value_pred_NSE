@@ -1,4 +1,4 @@
-import yfinance as yf
+from utilites.datafeeds.yfinance_config import yf
 
 def get_price_history(ticker_symbol : dict[str,int], total_portfolio_value):
     history_dict ={}

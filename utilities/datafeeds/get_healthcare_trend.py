@@ -1,4 +1,4 @@
-import yfinance as yf
+from utilites.datafeeds.yfinance_config import yf
 import pandas as pd
 from utilites.technical.rsi import rsi
 from utilites.technical.ema import ema
