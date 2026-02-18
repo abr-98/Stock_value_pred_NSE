@@ -1,6 +1,7 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
 import numpy as np
+from utilites.fundamental.build_fundamental_rationale import build_fundamental_rationale
 
 class FundamentalAgent(StockAgent):
     """
@@ -31,6 +32,7 @@ class FundamentalAgent(StockAgent):
             f"ALTMAN Z={fundamentals.get('altman_z')}"
             f"PE={fundamentals.get('pe')}"
         )
+        structural_rationale = build_fundamental_rationale(fundamentals)
 
         return StockSignal(
             symbol=symbol,
@@ -38,6 +40,7 @@ class FundamentalAgent(StockAgent):
             score=float(score),
             confidence=confidence,
             horizon=self.horizon,
-            rationale=rationale,
+            numeric_rationale=rationale,
+            structural_rationale=structural_rationale,
             evidence=fundamentals
         )
