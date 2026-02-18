@@ -1,22 +1,24 @@
 import numpy as np
+import pandas as pd
 
-def cvar(returns, alpha=0.95):
-    """
-    returns: 1D array-like of returns (negative = loss)
-    alpha: confidence level (e.g. 0.95)
-    """
-    returns = np.asarray(returns)
-    returns = returns[~np.isnan(returns)]
+def safe_div(a, b):
+    return np.nan if b in [0, None, np.nan] else a / b
 
-    if len(returns) == 0:
+def cagr(series):
+    series = series.dropna()
+    if len(series) < 2:
         return np.nan
+    n = len(series) - 1
+    return (series.iloc[0] / series.iloc[-1]) ** (1 / n) - 1
 
-    losses = -returns
-    var_threshold = np.quantile(losses, alpha)
+def yoy_growth(series):
+    return series.pct_change(-1)
 
-    tail_losses = losses[losses >= var_threshold]
+def volatility(series):
+    return np.nanstd(series)
 
-    if len(tail_losses) == 0:
-        return np.nan
+def ttm(series):
+    return series.iloc[:4].sum()
 
-    return tail_losses.mean()
+def avg(series, n=2):
+    return series.iloc[:n].mean()

@@ -5,9 +5,10 @@ from utilites.fundamental.earnings_quality import earnings_quality
 from utilites.fundamental.growth_indicators import growth_indicators
 from utilites.fundamental.health_indicators import health_indicators
 from utilites.fundamental.event_markers import derive_events
-import yfinance as yf
+from utilites.datafeeds.yfinance_config import yf
 from utilites.fundamental.quarter_analysis import quarterly_analysis
 from utilites.fundamental.governance_penalty import governance_penalty
+from utilites.serialization_helper import convert_to_serializable
 
 
 def fundamental_agent(ticker):
@@ -24,4 +25,5 @@ def fundamental_agent(ticker):
 
     result["governance_penalty"] = governance_penalty(t.info)
 
-    return result
+    # Convert all numpy/pandas types to Python native types
+    return convert_to_serializable(result)
