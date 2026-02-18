@@ -5,19 +5,24 @@ from application.orchestrators.market_data_fetch_orchestrator import DataFetchOr
 
 class StockDataEngine:
 
-    def __init__(self):
+    def __init__(self, agents=None):
         self.market_fetch_orchestrator = DataFetchOrchestratorMarket()
+        self.agents = agents  # Pre-initialized agents from API startup
 
 
     def run(self, portfolio, value) -> dict:
         """
         Returns stock data for a given symbol.
         """
-        initializer = SystemInitializer()
-        agents = initializer.get_agents()
+        # Use pre-initialized agents if available, otherwise initialize
+        if self.agents and "allocation_agent" in self.agents:
+            allocation_agent = self.agents["allocation_agent"]
+        else:
+            initializer = SystemInitializer()
+            agents = initializer.get_agents()
+            allocation_agent = agents["allocation_agent"]
 
         data = self.market_fetch_orchestrator.build_market_state(portfolio, value)
-        allocation_agent = agents["allocation_agent"]
         allocation_analysis = allocation_agent.run(data)
 
         return {
