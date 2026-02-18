@@ -1,13 +1,17 @@
-import pdfplumber
+import fitz  # PyMuPDF
 
 def extract_pdf_text(pdf_path):
     pages = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for i, page in enumerate(pdf.pages):
-            text = page.extract_text()
-            if text:
-                pages.append({
-                    "page": i + 1,
-                    "text": text
-                })
+
+    doc = fitz.open(pdf_path)
+
+    for i, page in enumerate(doc):
+        text = page.get_text("text")   # best general-purpose mode
+
+        if text.strip():
+            pages.append({
+                "page": i + 1,
+                "text": text
+            })
+
     return pages

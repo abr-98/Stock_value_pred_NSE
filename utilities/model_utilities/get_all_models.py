@@ -20,7 +20,7 @@ def get_all_models():
     "Private Bank": "NIFTY PRIVATE BANK",
     "PSU Bank": "NIFTY PSU BANK",
     "Consumer Durables": "NIFTY CONSUMER DURABLES",
-    "Oil and Gas": "NIFTY OIL & GAS",
+    "Oil and Gas": "NIFTY ENERGY",
     "Healthcare": "NIFTY HEALTHCARE"
   }
   sectors = list(sector_to_nselib.values())

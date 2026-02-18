@@ -1,8 +1,11 @@
-from utilites.portfolio.log_returns import log_returns
-from utilites.portfolio.avg_pairwise_corr import avg_pairwise_corr, effective_number_of_bets, variance_contribution
+from utilites.diversification.log_returns import log_returns
+from utilites.portfolio.avg_pairwise_corr import avg_pairwise_corr
+from utilites.portfolio.effective_number_of_bets import effective_number_of_bets
+from utilites.portfolio.variance_contribution import variance_contribution
 from utilites.portfolio.pairwise_correlation import pairwise_correlation
 from utilites.portfolio.correlation_regime import correlation_regime
 from utilites.portfolio.risk_agent import portfolio_risk_agent
+from utilites.serialization_helper import convert_to_serializable
 import pandas as pd
 
 def correlation_agent(data: dict):
@@ -28,4 +31,5 @@ def correlation_agent(data: dict):
     #full_analysis.update(groupwise_analyis)
     full_analysis.update(portfolio_risk_agent(data))
 
-    return full_analysis
+    # Convert all numpy/pandas types to Python native types for JSON serialization
+    return convert_to_serializable(full_analysis)

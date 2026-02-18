@@ -3,15 +3,15 @@ class InterpretationAgent:
         self.llm = llm
 
     def explain(self, reasoning_text, audience="investor"):
-        prompt = f"""
-        Convert the following analysis into clear language
-        suitable for a {audience}.
+      prompt = f"""
+        You are an expert financial communicator.
 
-        Do NOT add new analysis.
-        Do NOT speculate.
+        Convert the following analysis into clear, plain language suitable for an {audience}.
+        Do NOT add new analysis or new facts.
+        Just rewrite the analysis so it’s easier to understand.
 
         ANALYSIS:
         {reasoning_text}
         """
 
-        return self.llm.predict(prompt)
+      return self.llm.invoke(prompt).content
