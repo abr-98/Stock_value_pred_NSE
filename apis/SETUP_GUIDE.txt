@@ -1,0 +1,126 @@
+"""
+SETUP GUIDE: FastAPI System with Proper Initialization
+========================================================
+
+CHANGES MADE TO ADDRESS ENVIRONMENT.PY AND INITIALIZERS:
+
+1. ENVIRONMENT.PY INTEGRATION
+   - The load_api_key() function from environment.py is now called during API startup
+   - This loads the OpenAI API key from OpenAI-Key.txt automatically
+   - Happens once when the server starts, not on every request
+
+2. SYSTEM INITIALIZER INTEGRATION
+   - SystemInitializer.initialize_system() is called on API startup
+   - This initializes:
+     * Vector Database (VectorDB)
+     * All agents (Technical, Sentiment, Fundamental, Risk, etc.)
+   - Pre-initialized agents are stored in app.state and reused across requests
+
+3. PERFORMANCE IMPROVEMENTS
+   - Before: Each API request created new agents (very slow)
+   - After: Agents created once on startup, reused for all requests (much faster)
+
+4. FILES MODIFIED
+   
+   a) application/helpers/initializers.py
+      - Fixed import path: vectordb -> application.helpers.vectordb
+      - Added individual agent storage (technical_agent, sentiment_agent, etc.)
+      - Updated get_agents() to return all agents with proper naming
+   
+   b) apis/main.py
+      - Added startup event handler
+      - Calls load_api_key() on startup
+      - Calls SystemInitializer.initialize_system() on startup
+      - Stores initialized agents in app.state for reuse
+   
+   c) All Engine Files (application/engines/*.py)
+      - Updated to accept optional pre-initialized agents
+      - Fall back to creating new agents if none provided (backward compatible)
+      - Files updated:
+        * allocation_data_engine.py
+        * correlation_data_engine.py
+        * fundamental_report_engine.py
+        * portfolio_data_engine.py
+   
+   d) All Router Files (apis/routers/*.py)
+      - Updated to pass pre-initialized agents from app.state to engines
+      - Added Request parameter to access app.state
+      - Files updated:
+        * stock_router.py
+        * portfolio_router.py
+        * allocation_router.py
+        * correlation_router.py
+        * fundamental_router.py
+
+STARTUP SEQUENCE:
+=================
+
+1. FastAPI app is created
+2. @app.on_event("startup") is triggered
+3. load_api_key() loads OpenAI key from OpenAI-Key.txt
+4. SystemInitializer() is created
+5. initialize_system() is called:
+   - Loads OpenAI API key
+   - Initializes VectorDB
+   - Creates all agents
+6. Agents are stored in app.state.agents
+7. API is ready to accept requests
+
+REQUEST FLOW:
+=============
+
+1. Request comes to API endpoint (e.g., POST /api/v1/stock/analyze)
+2. Router extracts pre-initialized agents from app.state
+3. Router creates engine with pre-initialized agents
+4. Engine uses agents (doesn't create new ones)
+5. Response is returned
+
+REQUIREMENTS:
+=============
+
+1. OpenAI-Key.txt must exist in project root
+2. All required packages must be installed (see requirements.txt)
+3. Vector database directory must be accessible
+
+TO START THE SERVER:
+====================
+
+Option 1 - Using the start script:
+    python apis/start_server.py
+
+Option 2 - Using uvicorn directly:
+    uvicorn apis.main:app --reload --host 0.0.0.0 --port 8000
+
+Option 3 - Running main.py:
+    cd apis
+    python main.py
+
+VERIFICATION:
+=============
+
+After starting, you should see:
+    ======================================================================
+    Starting Stock Predictor API...
+    ======================================================================
+    Loading OpenAI API key...
+    ✓ OpenAI API key loaded successfully
+    Initializing system components...
+    Loading existing Chroma DB... (or Creating new Chroma DB...)
+    ✓ System initialized successfully
+    ======================================================================
+    Stock Predictor API is ready!
+    ======================================================================
+
+Then visit: http://localhost:8000/docs to see the API documentation
+
+TROUBLESHOOTING:
+================
+
+Error: "Could not find OpenAI-Key.txt file"
+Solution: Create OpenAI-Key.txt in the project root with your API key
+
+Error: Import errors
+Solution: Ensure you're running from the project root and all packages are installed
+
+Error: VectorDB initialization fails
+Solution: Check that fundamentals.db directory is accessible
