@@ -8,5 +8,6 @@ class StockSignal:
     score: float        # [-1, +1]
     confidence: float   # [0, 1]
     horizon: str        # short | medium | long
-    rationale: str
+    numeric_rationale: str
+    structural_rationale: str
     evidence: Optional[Dict] = None

@@ -1,5 +1,6 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
+from utilites.sentiment.build_sentiment_rationale import build_sentiment_rationale
 
 
 class SentimentAgent(StockAgent):
@@ -20,9 +21,12 @@ class SentimentAgent(StockAgent):
 
         confidence = min(1.0, abs(score))
 
-        rationale = (
-            f"Company sentiment={company_score:.3f}, "
-            f"National sentiment={national_score:.3f}")
+        rationale = f"""
+            Company sentiment={company_score:.3f}, 
+            National sentiment={national_score:.3f}
+        """
+        
+        structural_rationale = build_sentiment_rationale(sentiment)
 
         return StockSignal(
             symbol=symbol,
@@ -30,6 +34,7 @@ class SentimentAgent(StockAgent):
             score=float(score),
             confidence=float(confidence),
             horizon=self.horizon,
-            rationale=rationale,
+            numeric_rationale=rationale,
+            structural_rationale=structural_rationale,
             evidence=sentiment
         )

@@ -1,6 +1,7 @@
-from agents import StockAgent
+from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
 import numpy as np
+from utilites.risk.build_risk_rationale import build_risk_rationale
 
 
 class RiskAgent(StockAgent):
@@ -34,12 +35,13 @@ class RiskAgent(StockAgent):
 
         confidence = 100 * np.exp(-risk_score / 70)
 
-        rationale = (
-            f"ATR pct={atr_pct:.3f}",
-            f"Volatility={vol:.3f}",
-            f"Max drawdown={dd:.3f}",
-            f"CVAR ={cvar_value:.3f}"
-        )
+        rationale = f"""
+             ATR pct={atr_pct:.3f}, 
+             Volatility={vol:.3f}, 
+             Max drawdown={dd:.3f}, 
+             CVAR ={cvar_value:.3f}
+        """
+        structural_rationale = build_risk_rationale(risk_data)
 
         return StockSignal(
             symbol=symbol,
@@ -47,6 +49,7 @@ class RiskAgent(StockAgent):
             score=float(risk_score),
             confidence=float(confidence),
             horizon=self.horizon,
-            rationale=rationale,
+            numeric_rationale=rationale,
+            structural_rationale=structural_rationale,
             evidence=risk_data
         )

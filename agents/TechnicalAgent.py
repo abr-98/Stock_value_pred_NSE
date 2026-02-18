@@ -1,5 +1,6 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
+from utilites.technical.build_technical_rationale import build_technical_rationale
 import numpy as np
 
 
@@ -11,7 +12,7 @@ class TechnicalAgent(StockAgent):
     def __init__(self):
         super().__init__(name="technical", horizon="short")
 
-    def compute_technical_deltas(indicators: dict) -> dict:
+    def compute_technical_deltas(self, indicators: dict) -> dict:
         """
         MCP: Convert indicators into normalized deltas.
         """
@@ -26,7 +27,6 @@ class TechnicalAgent(StockAgent):
             "ema_delta": float(ema_delta),
             "upper_band_delta": float(upper_delta),
             "lower_band_delta": float(lower_delta),
-            "atr_normalized": float(indicators["atr"] / close)
         }
 
     def run(self, symbol: str, mcp_data: dict) -> StockSignal:
@@ -35,23 +35,25 @@ class TechnicalAgent(StockAgent):
         deltas = self.compute_technical_deltas(technical_data)
 
 
-        technical_score = technical_data["direction"] * technical_data["momentum"] * (1 - technical_data["bb_penalty"])
+        technical_score = technical_data["direction"] * technical_data["momentum"] * (1 - technical_data["BB_penalty"])
 
         delta_score = (
             0.5 * np.tanh(deltas["ema_delta"] * 10)
-            - 0.3 * deltas["atr_normalized"]
         )
         score = (technical_score + delta_score)/2
 
         confidence = min(1.0, abs(score))
 
-        rationale = (
-            f"EMA delta={deltas['ema_delta']:.3f}, "
-            f"ATR normalized={deltas['atr_normalized']:.3f}"
-            f"BB penalty={technical_data['bb_penalty']:.3f}"
-            f"momentum score={technical_data["moment"]:.3f}"
-            f"direction={technical_data["direction"]:.3f}"
-        )
+        numeric_rationale = f"""
+            EMA delta={deltas['ema_delta']:.3f}, 
+            BB penalty={technical_data['BB_penalty']:.3f}, 
+            momentum score={technical_data['momentum']:.3f}, 
+            direction={technical_data['direction']:.3f}
+        """
+
+        structural_rationale = build_technical_rationale(technical_data)
+
+
 
         return StockSignal(
             symbol=symbol,
@@ -59,6 +61,7 @@ class TechnicalAgent(StockAgent):
             score=float(score),
             confidence=float(confidence),
             horizon=self.horizon,
-            rationale=rationale,
-            evidence=deltas.update(technical_data)
+            numeric_rationale=numeric_rationale,
+            structural_rationale=structural_rationale,
+            evidence= {**technical_data, **deltas}
         )

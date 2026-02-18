@@ -6,4 +6,5 @@ class RegimeSignal:
     regime: str                 # risk_on | risk_off | neutral
     confidence: float
     sector_bias: Dict[str, float]
-    rationale: str
+    numeric_rationale: str
+    structural_rationale: str
