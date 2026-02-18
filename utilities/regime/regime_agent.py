@@ -1,5 +1,6 @@
 from utilites.regime.adx import adx
 from utilites.regime.atr import atr
+from utilites.serialization_helper import convert_to_serializable
 
 def regime_agent(df):
     """
@@ -23,9 +24,12 @@ def regime_agent(df):
         regime = "RANGE"
         confidence = 0.6
 
-    return {
+    result = {
             "ADX": round(adx_val, 2),
             "ATR_pct": round(atr_pct * 100, 2),
             "regime": regime,
             "confidence": round(confidence, 2)
           }
+    
+    # Convert all numpy/pandas types to Python native types
+    return convert_to_serializable(result)

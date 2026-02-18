@@ -1,4 +1,4 @@
-import yfinance as yf
+from utilites.datafeeds.yfinance_config import yf
 
 def get_news_company(ticker):
   ticker = yf.Ticker(ticker)
