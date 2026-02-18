@@ -2,7 +2,9 @@ import os
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
-PERSIST_DIR_FUNDAMENTAL = "/fundamentals.db"   # choose your path once
+# Get project root directory and create proper path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PERSIST_DIR_FUNDAMENTAL = os.path.join(PROJECT_ROOT, "fundamentals.db")
 
 class VectorDB:
     _instance = None
@@ -33,5 +35,6 @@ class VectorDB:
             embedding_function=embeddings
         )
 
-    def initialize_vector_db(self):
-        return self.get()
+    @classmethod
+    def initialize_vector_db(cls):
+        return cls.get()

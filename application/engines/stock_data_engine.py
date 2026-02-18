@@ -4,7 +4,7 @@ from utilites.regime.regime_agent import regime_agent
 from utilites.risk.risk_agent import risk_agent
 from utilites.fundamental.fundamental_agent import fundamental_agent
 from utilites.sentiment.get_sentiment import get_sentiment
-from agents.StockSignalAggregatorAgent import StockSignalAggregator
+from agents.StockSignalAggregatorAgent import StockSignalAggregatorAgent
 from application.helpers.initializers import SystemInitializer
 
 
@@ -37,9 +37,8 @@ class StockDataEngine:
             "sentiment": sentiment_data
         }
 
-        stock_signal_aggregator = StockSignalAggregator(stock_agents=[
+        stock_signal_aggregator = StockSignalAggregatorAgent(stock_agents=[
             self.agents["technical_agent"],
-            self.agents["regime_stock_agent"],
             self.agents["risk_agent"],
             self.agents["fundamental_agent"],
             self.agents["sentiment_agent"]

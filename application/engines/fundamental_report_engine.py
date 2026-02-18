@@ -1,25 +1,20 @@
-from application.orchestrators.fundamental_report_fetch_orchestrator import FundamentalReportFetchOrchestrator
-from agents.FundamentalRAGSystem import FundamentalRAGSystem
-from application.helpers.vectordb import VectorDB
+from application.helpers.initializers import SystemInitializer
 
 
 class FundamentalReportEngine:
 
-    def __init__(self):
-        self.data_fetcher = FundamentalReportFetchOrchestrator()
-
-
+    def __init__(self, agents=None):
+        self.agents = agents  # Pre-initialized agents from API startup
 
     def run(self, symbol) -> dict:
-        """
-        Returns stock data for a given symbol.
-        """
-
-        market_state = self.data_fetcher.build_market_state(symbol)
-
-        vector_db = market_state["vector_db"]
-
-        rag_system = FundamentalRAGSystem(vector_db)
-        report = rag_system.explain_company(symbol)
-
+        # Use pre-initialized agents if available, otherwise initialize
+        if self.agents and "fundamental_documents_agent" in self.agents:
+            fundamental_documents_agent = self.agents["fundamental_documents_agent"]
+        else:
+            initializer = SystemInitializer()
+            initializer.initialize_system()
+            agents = initializer.get_agents()
+            fundamental_documents_agent = agents["fundamental_documents_agent"]
+        
+        report = fundamental_documents_agent.run(symbol)
         return report
