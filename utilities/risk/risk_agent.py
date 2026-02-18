@@ -1,6 +1,8 @@
 from utilites.risk.returns import returns
 from utilites.risk.max_drawdown import max_drawdown
 from utilites.risk.rolling_volatility import rolling_volatility
+from utilites.risk.cvar import cvar
+from utilites.serialization_helper import convert_to_serializable
 import pandas as pd
 
 
@@ -41,11 +43,14 @@ def risk_agent(df):
     dd = abs(max_drawdown(close))
     dd_risk = min(dd / 0.3, 1.0)  # 30% drawdown = severe
 
-    cvar = cvar(returns(close))
+    cvar_value = cvar(returns(close))
 
-    return {
+    result = {
             "ATR_pct": round(atr_pct * 100, 2),
             "volatility": round(vol * 100, 2),
             "max_drawdown": round(dd * 100, 2),
-            "cvar": round(cvar,2)
+            "cvar": round(cvar_value * 100, 2)
           }
+    
+    # Convert all numpy/pandas types to Python native types
+    return convert_to_serializable(result)
