@@ -2,20 +2,15 @@ from utilites.allocation.get_propositions import get_propositions
 from utilites.serialization_helper import convert_to_serializable
 
 class AllocationAgent:
-    def run(self, aggregated_stock_views: dict):
+    def run(self, sector_weights=None):
         """
-        aggregated_stock_views → output of StockAggregationAgent
-
-        Expected shape (unchanged from your notebook logic):
-            symbol → {
-                score,
-                confidence,
-                disagreement,
-                ...
-            }
+        Get allocation recommendations.
+        
+        Args:
+            sector_weights: Optional dict of current sector weights for diversification
         """
 
-        result = get_propositions(aggregated_stock_views)
+        result = get_propositions(sector_weights)
         
         # Convert all numpy/pandas types to Python native types
         return convert_to_serializable(result)

@@ -22,7 +22,7 @@ class PortfolioAnalysisAgent:
         analysis = correlation_agent(portfolio_mcp_data)
 
         result = {"correlation_analysis": analysis,
-                "rationale": build_portfolio_rationale(analysis)}
+                "rationale": build_portfolio_rationale(analysis, analysis)}
         
         # Convert all numpy/pandas types to Python native types
         return convert_to_serializable(result)

@@ -24,13 +24,16 @@ async def get_allocation(request: AllocationRequest, api_request: Request):
     Get allocation recommendations based on market analysis
     
     Args:
-        request: AllocationRequest containing portfolio data and value
+        request: AllocationRequest with optional portfolio data and value
+                 If portfolio is provided, it will be used for diversification analysis
+                 If portfolio is None/empty, fresh allocation recommendations will be provided
     
     Returns:
         AllocationResponse with allocation recommendations
     """
     try:
-        logger.info(f"Starting allocation analysis for value: {request.value}")
+        portfolio_info = f"with portfolio ({len(request.portfolio)} holdings)" if request.portfolio else "without existing portfolio"
+        logger.info(f"Starting allocation analysis {portfolio_info}")
         
         # Initialize and run the allocation engine
         # Use pre-initialized agents if available (from app startup)

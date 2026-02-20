@@ -19,8 +19,8 @@ class PortfolioAnalysisRequest(BaseModel):
 
 class AllocationRequest(BaseModel):
     """Request model for allocation analysis"""
-    portfolio: Dict[str, Any] = Field(..., description="Portfolio holdings data")
-    value: float = Field(..., description="Total portfolio value", example=100000.0)
+    portfolio: Optional[Dict[str, int]] = Field(default=None, description="Optional portfolio holdings (stock symbol: quantity)")
+    value: Optional[float] = Field(default=None, description="Optional total portfolio value", example=100000.0)
 
 
 class CorrelationAnalysisRequest(BaseModel):
