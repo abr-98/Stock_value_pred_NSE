@@ -15,7 +15,7 @@ def build_portfolio_rationale(corr: dict, risk: dict) -> str:
     avg_corr = corr.get("avg_correlation")
     corr_trend = corr.get("avg_correlation_trend")
     enb = corr.get("effective_bets")
-    var_conc = corr.get("variance_concentration")
+    var_conc = corr.get("variance_concentration").get("pc1_variance")
     corr_regime = corr.get("correlation_regime")
 
     # =====================================================
