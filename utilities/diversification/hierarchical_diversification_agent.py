@@ -1,3 +1,4 @@
+from utilites.diversification.industry_dominance import industry_dominance
 from utilites.diversification.log_returns import log_returns
 from utilites.diversification.grouped_returns import grouped_returns
 from utilites.diversification.grouped_variance_contribution import group_variance_contribution
@@ -17,6 +18,7 @@ def hierarchical_diversification_agent(prices, weights, sector_map, industry_map
 
     sector_ret = grouped_returns(returns, sector_map)
     industry_ret = grouped_returns(returns, industry_map)
+    industry_dom = industry_dominance(returns, industry_map)
 
     return {
         "asset_level": {
@@ -28,14 +30,14 @@ def hierarchical_diversification_agent(prices, weights, sector_map, industry_map
             "effective_industries": effective_number(industry_w),
             "intra_inter_corr": intra_inter_corr(returns, industry_map),
             "variance_contribution": group_variance_contribution(weights, cov, industry_map),
-            "sector_returns": sector_ret
-
+            "industry_returns": industry_ret
         },
         "sector_level": {
             "weights": sector_w,
             "effective_sectors": effective_number(sector_w),
             "intra_inter_corr": intra_inter_corr(returns, sector_map),
             "variance_contribution": group_variance_contribution(weights, cov, sector_map),
-            "industry_returns": industry_ret,
+            "sector_returns": sector_ret,
+            "industry_dominance": industry_dom
         }
     }
