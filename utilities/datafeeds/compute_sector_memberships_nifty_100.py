@@ -4,6 +4,10 @@ from utilites.datafeeds import fetch_nse_index
 
 def compute_sector_memberships_nifty_100(nifty100_symbols):
     nifty100_data = fetch_nse_index("NIFTY%20100")
+    
+    # Handle case where fetch fails
+    if nifty100_data is None:
+        return {}
 
     nifty100_symbols = {
         row["symbol"]
@@ -26,6 +30,11 @@ def compute_sector_memberships_nifty_100(nifty100_symbols):
 
         try:
             sector_data = fetch_nse_index(index_code)
+            
+            # Handle case where fetch returns None
+            if sector_data is None:
+                sector_map[sector] = []
+                continue
 
             sector_symbols = {
                 row["symbol"]
@@ -36,7 +45,6 @@ def compute_sector_memberships_nifty_100(nifty100_symbols):
             sector_map[sector] = members
 
         except Exception as e:
-            print(f"Error fetching {sector}: {e}")
             sector_map[sector] = []
 
     return sector_map

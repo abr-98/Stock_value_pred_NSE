@@ -4,6 +4,7 @@ from utilites.model_utilities.predict_lstm import predict_lstm
 from utilites.allocation.trend_strength import trend_strength
 from utilites.allocation.sector_score import score_sector
 from utilites.model_utilities.explain_lstm_instance import explain_lstm_instance
+from utilites.datafeeds.yfinance_config import yf
 
 class UnifiedSectorAllocatorAgent:
     def __init__(
@@ -20,6 +21,82 @@ class UnifiedSectorAllocatorAgent:
         self.trend_weight = trend_weight
         self.regime_weight = regime_weight
 
+    @staticmethod
+    def portfolio_to_sector_weights(portfolio):
+        """
+        Convert stock portfolio to sector weights.
+        
+        Args:
+            portfolio: dict like {"RELIANCE.NS": 12, "TCS.NS": 6, ...}
+                      where keys are stock symbols and values are quantities
+        
+        Returns:
+            dict with sector weights like {"BANK": 0.25, "IT": 0.30, ...}
+        """
+        if not portfolio:
+            return {}
+        
+        # Sector mapping from yfinance sectors to allocation system sectors
+        sector_mapping = {
+            "Financial Services": "Financial Services",
+            "Banks": "BANK",
+            "Technology": "IT",
+            "Energy": "ENERGY",
+            "Healthcare": "HEALTHCARE",
+            "Consumer Cyclical": "Auto",
+            "Consumer Defensive": "FMCG",
+            "Industrials": "Industrials",
+            "Basic Materials": "Metal",
+            "Communication Services": "Media",
+            "Real Estate": "Realty",
+            "Utilities": "ENERGY"
+        }
+        
+        stock_values = {}
+        stock_sectors = {}
+        
+        # Calculate value and get sector for each stock
+        for ticker, quantity in portfolio.items():
+            try:
+                ticker_obj = yf.Ticker(ticker)
+                info = ticker_obj.info
+                
+                # Get current price
+                price = info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose")
+                if price is None:
+                    print(f"Warning: Could not get price for {ticker}, skipping")
+                    continue
+                
+                # Get sector
+                yf_sector = info.get("sector", "Unknown")
+                
+                # Map to allocation sector
+                alloc_sector = sector_mapping.get(yf_sector, yf_sector)
+                
+                # Calculate value
+                value = price * quantity
+                stock_values[ticker] = value
+                stock_sectors[ticker] = alloc_sector
+                
+            except Exception as e:
+                print(f"Warning: Error processing {ticker}: {e}")
+                continue
+        
+        if not stock_values:
+            return {}
+        
+        # Calculate total portfolio value
+        total_value = sum(stock_values.values())
+        
+        # Aggregate weights by sector
+        sector_weights = {}
+        for ticker, value in stock_values.items():
+            sector = stock_sectors[ticker]
+            weight = value / total_value
+            sector_weights[sector] = sector_weights.get(sector, 0.0) + weight
+        
+        return sector_weights
+    
     def trend_bias(self, trend):
         return {
             "STRONG_UPTREND": 1.5,

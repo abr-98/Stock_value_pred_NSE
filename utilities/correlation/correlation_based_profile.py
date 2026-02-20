@@ -1,6 +1,7 @@
 def correlation_based_profile(nifty_regime, sector_regime, stock_sector_corr):
 
-    corr_val = stock_sector_corr.iloc[-1]
+    # stock_sector_corr is already a float value
+    corr_val = stock_sector_corr
 
     if sector_regime == "SYSTEMIC":
 
