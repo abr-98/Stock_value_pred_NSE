@@ -1,6 +1,7 @@
 from application.helpers.initializers import SystemInitializer
 from agents.AllocationAgent import AllocationAgent
 from application.orchestrators.market_data_fetch_orchestrator import DataFetchOrchestratorMarket
+from utilites.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
 
 
 class StockDataEngine:
@@ -12,7 +13,11 @@ class StockDataEngine:
 
     def run(self, portfolio, value) -> dict:
         """
-        Returns stock data for a given symbol.
+        Returns allocation recommendations.
+        
+        Args:
+            portfolio: Optional dict of {symbol: quantity} for existing holdings
+            value: Optional total portfolio value
         """
         # Use pre-initialized agents if available, otherwise initialize
         if self.agents and "allocation_agent" in self.agents:
@@ -22,8 +27,12 @@ class StockDataEngine:
             agents = initializer.get_agents()
             allocation_agent = agents["allocation_agent"]
 
-        data = self.market_fetch_orchestrator.build_market_state(portfolio, value)
-        allocation_analysis = allocation_agent.run(data)
+        # Convert stock portfolio to sector weights if provided
+        sector_weights = None
+        if portfolio and isinstance(portfolio, dict) and len(portfolio) > 0:
+            sector_weights = UnifiedSectorAllocatorAgent.portfolio_to_sector_weights(portfolio)
+
+        allocation_analysis = allocation_agent.run(sector_weights)
 
         return {
             "allocation_analysis": allocation_analysis

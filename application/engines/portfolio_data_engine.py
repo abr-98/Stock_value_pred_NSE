@@ -24,8 +24,16 @@ class PortfolioDataEngine:
             diversification_agent = agents["diversification_agent"]
 
         data = self.portfolio_fetch_orchestrator.build_portfolio_state(portfolio, value)
-        portfolio_analysis, portfolio_rationale = portfolio_analysis_agent.run(data)
-        diversification_analysis, diversification_rationale = diversification_agent.run(data)
+        
+        # Run portfolio analysis agent
+        portfolio_result = portfolio_analysis_agent.run(data)
+        portfolio_analysis = portfolio_result.get("correlation_analysis", {})
+        portfolio_rationale = portfolio_result.get("rationale", "")
+        
+        # Run diversification agent
+        diversification_result = diversification_agent.run(data)
+        diversification_analysis = diversification_result.get("diversification_analysis", {})
+        diversification_rationale = diversification_result.get("rationale", "")
 
         rationale = f"Portfolio Analysis Rationale: {portfolio_rationale}\n\nDiversification Analysis Rationale: {diversification_rationale}" 
 

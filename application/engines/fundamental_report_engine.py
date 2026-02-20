@@ -16,5 +16,13 @@ class FundamentalReportEngine:
             agents = initializer.get_agents()
             fundamental_documents_agent = agents["fundamental_documents_agent"]
         
-        report = fundamental_documents_agent.run(symbol)
+        report_text = fundamental_documents_agent.run(symbol)
+        
+        # Wrap the text report in a dictionary structure for the API response
+        report = {
+            "analysis": report_text,
+            "symbol": symbol,
+            "report_type": "fundamental_document_analysis"
+        }
+        
         return report
