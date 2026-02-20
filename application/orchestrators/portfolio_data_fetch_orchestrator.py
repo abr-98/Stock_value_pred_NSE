@@ -8,6 +8,4 @@ class PortfolioDataFetchOrchestrator:
 
     def build_portfolio_state(self, symbol_details, total_portfolio_value) -> dict:
 
-        return {
-            "data": DataFetchersPortfolio.get_portfolio_details(symbol_details, total_portfolio_value)
-        }
+        return DataFetchersPortfolio.get_portfolio_details(symbol_details, total_portfolio_value)

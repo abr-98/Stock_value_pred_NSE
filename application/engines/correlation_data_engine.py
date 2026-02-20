@@ -9,7 +9,7 @@ class CorrelationDataEngine:
         self.agents = agents  # Pre-initialized agents from API startup
 
 
-    def run(self, symbol) -> dict:
+    def run(self, symbol) -> tuple:
         """
         Returns stock data for a given symbol.
         """
@@ -21,6 +21,10 @@ class CorrelationDataEngine:
             system_initializer.initialize_system()
             correlation_agent = system_initializer.get_agents()["correlation_agent"]
 
-        correlation_report, rationale = correlation_agent.run(self.data_fetcher.fetch_correlation_data(symbol))
+        result = correlation_agent.run(self.data_fetcher.fetch_correlation_data(symbol))
+        
+        # Extract analysis and rationale from the result dictionary
+        correlation_report = result.get("analysis", {})
+        rationale = result.get("rationale", "")
 
         return correlation_report, rationale
