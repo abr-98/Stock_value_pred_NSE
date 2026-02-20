@@ -17,13 +17,15 @@ def correlation_agent(data: dict):
     avg_corr = avg_pairwise_corr(returns)
     enb = effective_number_of_bets(corr)
     var_conc = variance_contribution(corr)
+    recent = avg_corr.iloc[-1]
+    past = avg_corr.iloc[-20] if len(avg_corr) > 20 else avg_corr.iloc[0]
 
     #groupwise_analyis = hierarchical_diversification_agent(data["prices"], data["weights"], data["sector_map"], data["industry_map"])
 
     full_analysis=  {
         "pairwise_corr": pairwise_correlation(returns),
-        "avg_correlation": avg_corr.iloc[-1],
-        "avg_correlation_trend": avg_corr.iloc[-1] - avg_corr.iloc[-20],
+        "avg_correlation": recent,
+        "avg_correlation_trend": recent - past,
         "effective_bets": enb,
         "variance_concentration": var_conc,
         "correlation_regime": correlation_regime(avg_corr)
