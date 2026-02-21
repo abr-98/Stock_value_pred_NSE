@@ -1,4 +1,4 @@
-from utilites.allocation.compute_trend_strength_window import compute_trend_strength_window
+from utilities.allocation.compute_trend_strength_window import compute_trend_strength_window
 
 
 def check_trend(df, lookback=50):

@@ -1,4 +1,4 @@
-from utilites.fundamental.utility import volatility, cagr, yoy_growth
+from utilities.fundamental.utility import volatility, cagr, yoy_growth
 
 def earnings_quality(income_a):
     ni = income_a.loc["Net Income"]

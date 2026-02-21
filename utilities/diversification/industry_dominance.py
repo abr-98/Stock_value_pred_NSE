@@ -1,6 +1,6 @@
 import pandas as pd
-from utilites.diversification.log_returns import log_returns
-from utilites.diversification.grouped_returns import grouped_returns
+from utilities.diversification.log_returns import log_returns
+from utilities.diversification.grouped_returns import grouped_returns
 import numpy as np
 
 def industry_dominance(returns: pd.DataFrame, industry_map: dict):

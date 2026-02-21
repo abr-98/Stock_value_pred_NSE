@@ -1,6 +1,6 @@
-from utilites.correlation.market_structure_agent import market_structure_agent
-from utilites.correlation.build_correlation_rationale import build_market_sector_rationale
-from utilites.serialization_helper import convert_to_serializable
+from utilities.correlation.market_structure_agent import market_structure_agent
+from utilities.correlation.build_correlation_rationale import build_market_sector_rationale
+from utilities.serialization_helper import convert_to_serializable
 
 class CorrelationAgent:
     def run(self, nifty_data: dict):

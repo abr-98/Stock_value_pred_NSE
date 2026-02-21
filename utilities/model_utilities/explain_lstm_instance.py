@@ -1,6 +1,6 @@
 from lime.lime_tabular import LimeTabularExplainer
 import numpy as np
-from utilites.model_utilities.lstm_predict_wrapper import lstm_predict_wrapper
+from utilities.model_utilities.lstm_predict_wrapper import lstm_predict_wrapper
 
 def explain_lstm_instance(
     model,

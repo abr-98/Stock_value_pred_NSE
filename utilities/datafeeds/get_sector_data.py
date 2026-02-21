@@ -1,4 +1,4 @@
-from utilites.datafeeds.get_details_week import get_details_week
+from utilities.datafeeds.get_details_week import get_details_week
 
 def get_sector_data(sectors):
   sector_data = {}

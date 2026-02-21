@@ -1,11 +1,11 @@
-from utilites.sentiment.get_news_company import get_news_company
-from utilites.sentiment.get_news_national import get_news_national
-from utilites.sentiment.fetch_sentiments import headline_sentiment
-from utilites.sentiment.sentiment_pressure import sentiment_pressure
-from utilites.sentiment.sentiment_shock import sentiment_shock
-from utilites.sentiment.safe_mean import safe_mean
-from utilites.sentiment.extract_extreme_sentiment import extract_extremes
-from utilites.serialization_helper import convert_to_serializable
+from utilities.sentiment.get_news_company import get_news_company
+from utilities.sentiment.get_news_national import get_news_national
+from utilities.sentiment.fetch_sentiments import headline_sentiment
+from utilities.sentiment.sentiment_pressure import sentiment_pressure
+from utilities.sentiment.sentiment_shock import sentiment_shock
+from utilities.sentiment.safe_mean import safe_mean
+from utilities.sentiment.extract_extreme_sentiment import extract_extremes
+from utilities.serialization_helper import convert_to_serializable
 import numpy as np
 
 def get_sentiment(ticker):

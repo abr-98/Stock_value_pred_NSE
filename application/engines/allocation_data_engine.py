@@ -1,7 +1,7 @@
 from application.helpers.initializers import SystemInitializer
 from agents.AllocationAgent import AllocationAgent
 from application.orchestrators.market_data_fetch_orchestrator import DataFetchOrchestratorMarket
-from utilites.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
+from utilities.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
 
 
 class StockDataEngine:

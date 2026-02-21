@@ -1,6 +1,6 @@
 import torch
 import os
-from utilites.model_utilities.lstm_model import ResidualLSTM
+from utilities.model_utilities.lstm_model import ResidualLSTM
 
 def load_models(sectors, device="cpu"):
     models = {}

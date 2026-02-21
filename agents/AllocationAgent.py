@@ -1,5 +1,5 @@
-from utilites.allocation.get_propositions import get_propositions
-from utilites.serialization_helper import convert_to_serializable
+from utilities.allocation.get_propositions import get_propositions
+from utilities.serialization_helper import convert_to_serializable
 
 class AllocationAgent:
     def run(self, sector_weights=None):

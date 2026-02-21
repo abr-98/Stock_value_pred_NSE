@@ -1,5 +1,5 @@
 
-from utilites.datafeeds import fetch_nse_index
+from utilities.datafeeds import fetch_nse_index
 
 
 def compute_sector_memberships_nifty_100(nifty100_symbols):

@@ -1,4 +1,4 @@
-from utilites.portfolio.rolling_corr_matrix import rolling_corr_matrix
+from utilities.portfolio.rolling_corr_matrix import rolling_corr_matrix
 
 def avg_pairwise_corr(returns, window=60):
     rolling = rolling_corr_matrix(returns, window)

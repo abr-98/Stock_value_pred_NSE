@@ -1,5 +1,5 @@
-from utilites.datafeeds.get_healthcare_trend import get_healthcare_trend
-from utilites.datafeeds.get_gas_and_oil_trend import get_gas_and_oil_trend
+from utilities.datafeeds.get_healthcare_trend import get_healthcare_trend
+from utilities.datafeeds.get_gas_and_oil_trend import get_gas_and_oil_trend
 
 
 def get_feed_data(models, datasets, feature_sets):

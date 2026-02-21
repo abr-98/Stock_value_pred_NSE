@@ -5,11 +5,13 @@ from agents.SentimentAgent import SentimentAgent
 from agents.FundamentalAgent import FundamentalAgent
 from agents.RiskAgent import RiskAgent
 from agents.AllocationAgent import AllocationAgent
-from utilites.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
+from agents.ExplainAgent import ExplainAgent
 from agents.PortfolioAnalysisAgent import PortfolioAnalysisAgent
 from agents.DiversificationAgent import DiversificationAgent
 from agents.CorrelationAgent import CorrelationAgent
 from agents.FundamentalDocumentsAgent import FundamentalDocumentsAgent
+from agents.MemoryAgent import MemoryAgent
+
 from environment import load_api_key
 from application.helpers.vectordb import VectorDB
 
@@ -31,6 +33,8 @@ class SystemInitializer:
         self.sentiment_agent = None
         self.fundamental_agent = None
         self.risk_agent = None
+        self.memory_agent = None
+        self.explain_agent = None
         
 
     def initialize_system(self):
@@ -42,7 +46,8 @@ class SystemInitializer:
         sentiment_agent = SentimentAgent()
         fundamental_agent = FundamentalAgent()
         risk_agent = RiskAgent()
-
+        memory_agent = MemoryAgent()
+        explain_agent = ExplainAgent()
         stock_agents = [
             technical_agent,
             sentiment_agent,
@@ -73,6 +78,8 @@ class SystemInitializer:
         self.sentiment_agent = sentiment_agent
         self.fundamental_agent = fundamental_agent
         self.risk_agent = risk_agent
+        self.memory_agent = memory_agent
+        self.explain_agent = explain_agent
 
     def get_agents(self):
         return {
@@ -89,6 +96,8 @@ class SystemInitializer:
             "sentiment_agent": self.sentiment_agent,
             "fundamental_agent": self.fundamental_agent,
             "risk_agent": self.risk_agent,
+            "memory_agent": self.memory_agent,
+            "explain_agent": self.explain_agent,
             "regime_stock_agent": self.regime_agent,  # Alias
         }
 

@@ -1,5 +1,5 @@
 import numpy as np
-from utilites.fundamental.utility import volatility, cagr
+from utilities.fundamental.utility import volatility, cagr
 
 def roe_roic(balance_a, income_a):
     net_income = income_a.loc["Net Income"]

@@ -1,4 +1,4 @@
-from utilites.model_utilities.make_feature_names import make_feature_names
+from utilities.model_utilities.make_feature_names import make_feature_names
 
 
 def return_feature_names():

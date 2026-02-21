@@ -1,4 +1,4 @@
-from utilites.fundamental.utility import cagr, yoy_growth
+from utilities.fundamental.utility import cagr, yoy_growth
 
 def growth_indicators(income_a, income_q, cashflow_a):
     revenue_a = income_a.loc["Total Revenue"]
