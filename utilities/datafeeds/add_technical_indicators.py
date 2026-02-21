@@ -1,7 +1,7 @@
-from utilites.technical.rsi import rsi
-from utilites.technical.macd import macd
-from utilites.technical.bollinger import bollinger
-from utilites.technical.ema import ema
+from utilities.technical.rsi import rsi
+from utilities.technical.macd import macd
+from utilities.technical.bollinger import bollinger
+from utilities.technical.ema import ema
 
 
 def add_technical_indicators(df):

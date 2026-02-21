@@ -1,5 +1,5 @@
-from utilites.datafeeds.prepare_feed_data import prepare_feed_data
-from utilites.datafeeds.compute_sector_memberships_nifty_100 import compute_sector_memberships_nifty_100
+from utilities.datafeeds.prepare_feed_data import prepare_feed_data
+from utilities.datafeeds.compute_sector_memberships_nifty_100 import compute_sector_memberships_nifty_100
 
 
 class DataFetchersMarket:

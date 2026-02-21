@@ -25,3 +25,5 @@ pip-system-certs
 idna
 urllib3==2.6.2
 requests
+faiss-cpu
+scikit-learn

@@ -1,6 +1,6 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
-from utilites.technical.build_technical_rationale import build_technical_rationale
+from utilities.technical.build_technical_rationale import build_technical_rationale
 import numpy as np
 
 

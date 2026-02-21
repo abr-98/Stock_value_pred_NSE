@@ -1,5 +1,5 @@
-from utilites.datafeeds.get_bees_data import get_bees_data
-from utilites.datafeeds.get_sector_data import get_sector_data
+from utilities.datafeeds.get_bees_data import get_bees_data
+from utilities.datafeeds.get_sector_data import get_sector_data
 
 def get_all_sector_data():
   sector_to_nselib = {

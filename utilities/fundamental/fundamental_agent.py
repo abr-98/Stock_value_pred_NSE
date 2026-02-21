@@ -1,14 +1,14 @@
-from utilites.fundamental.valuation_indicators import valuation_indicators
-from utilites.fundamental.roe_roic import roe_roic
-from utilites.fundamental.margin_quality import margin_quality
-from utilites.fundamental.earnings_quality import earnings_quality
-from utilites.fundamental.growth_indicators import growth_indicators
-from utilites.fundamental.health_indicators import health_indicators
-from utilites.fundamental.event_markers import derive_events
-from utilites.datafeeds.yfinance_config import yf
-from utilites.fundamental.quarter_analysis import quarterly_analysis
-from utilites.fundamental.governance_penalty import governance_penalty
-from utilites.serialization_helper import convert_to_serializable
+from utilities.fundamental.valuation_indicators import valuation_indicators
+from utilities.fundamental.roe_roic import roe_roic
+from utilities.fundamental.margin_quality import margin_quality
+from utilities.fundamental.earnings_quality import earnings_quality
+from utilities.fundamental.growth_indicators import growth_indicators
+from utilities.fundamental.health_indicators import health_indicators
+from utilities.fundamental.event_markers import derive_events
+from utilities.datafeeds.yfinance_config import yf
+from utilities.fundamental.quarter_analysis import quarterly_analysis
+from utilities.fundamental.governance_penalty import governance_penalty
+from utilities.serialization_helper import convert_to_serializable
 
 
 def fundamental_agent(ticker):

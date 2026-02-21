@@ -1,5 +1,5 @@
-from utilites.regime.atr import atr
-from utilites.regime.adx import adx
+from utilities.regime.atr import atr
+from utilities.regime.adx import adx
 
 
 def add_regime_indicators(df):

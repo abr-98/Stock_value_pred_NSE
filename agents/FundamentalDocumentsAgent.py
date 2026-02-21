@@ -1,4 +1,4 @@
-from utilites.fundamental_document.get_company_earning_analysis import get_company_earning_analysis
+from utilities.fundamental_document.get_company_earning_analysis import get_company_earning_analysis
 
 class FundamentalDocumentsAgent:
 

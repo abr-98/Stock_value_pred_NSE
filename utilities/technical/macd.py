@@ -1,4 +1,4 @@
-from utilites.technical.ema import ema
+from utilities.technical.ema import ema
 
 def macd(series, fast=12, slow=26, signal=9):
     ema_fast = ema(series, fast)

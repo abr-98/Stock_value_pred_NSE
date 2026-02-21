@@ -1,12 +1,12 @@
-from utilites.diversification.industry_dominance import industry_dominance
-from utilites.diversification.log_returns import log_returns
-from utilites.diversification.grouped_returns import grouped_returns
-from utilites.diversification.grouped_variance_contribution import group_variance_contribution
-from utilites.diversification.intra_inter_corr import intra_inter_corr
-from utilites.diversification.aggregate_weights import aggregate_weights
+from utilities.diversification.industry_dominance import industry_dominance
+from utilities.diversification.log_returns import log_returns
+from utilities.diversification.grouped_returns import grouped_returns
+from utilities.diversification.grouped_variance_contribution import group_variance_contribution
+from utilities.diversification.intra_inter_corr import intra_inter_corr
+from utilities.diversification.aggregate_weights import aggregate_weights
 import pandas as pd
 import numpy as np
-from utilites.diversification.hhi import effective_number
+from utilities.diversification.hhi import effective_number
 
 
 def hierarchical_diversification_agent(prices, weights, sector_map, industry_map):

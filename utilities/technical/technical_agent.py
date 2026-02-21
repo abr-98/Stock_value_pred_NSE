@@ -1,12 +1,12 @@
-from utilites.technical.ema import ema
-from utilites.technical.bollinger import bollinger
-from utilites.technical.rsi import rsi
-from utilites.technical.macd import macd
-from utilites.technical.volume_ratio import volume_ratio
-from utilites.technical.volume_spike import volume_spike
-from utilites.technical.volume_price_trend import vpt
-from utilites.technical.accumlation_distribution_line import adl
-from utilites.serialization_helper import convert_to_serializable
+from utilities.technical.ema import ema
+from utilities.technical.bollinger import bollinger
+from utilities.technical.rsi import rsi
+from utilities.technical.macd import macd
+from utilities.technical.volume_ratio import volume_ratio
+from utilities.technical.volume_spike import volume_spike
+from utilities.technical.volume_price_trend import vpt
+from utilities.technical.accumlation_distribution_line import adl
+from utilities.serialization_helper import convert_to_serializable
 import numpy as np
 
 

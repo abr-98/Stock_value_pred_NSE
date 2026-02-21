@@ -1,6 +1,6 @@
-from utilites.datafeeds.get_nifty_and_sector_data import get_nifty_and_sector_data
-from utilites.datafeeds.get_stock_series import get_stock_series
-from utilites.datafeeds.get_sector import get_sector_yf
+from utilities.datafeeds.get_nifty_and_sector_data import get_nifty_and_sector_data
+from utilities.datafeeds.get_stock_series import get_stock_series
+from utilities.datafeeds.get_sector import get_sector_yf
 
 class DataFetcherCorrelation:
     @staticmethod

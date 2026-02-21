@@ -1,5 +1,5 @@
-from utilites.datafeeds.add_technical_indicators import add_technical_indicators
-from utilites.datafeeds.add_regime_indicator import add_regime_indicators
+from utilities.datafeeds.add_technical_indicators import add_technical_indicators
+from utilities.datafeeds.add_regime_indicator import add_regime_indicators
 
 
 def create_dataframe(history, nselib =False):

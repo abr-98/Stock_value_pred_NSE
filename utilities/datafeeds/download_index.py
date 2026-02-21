@@ -1,4 +1,4 @@
-from utilites.datafeeds.yfinance_config import yf
+from utilities.datafeeds.yfinance_config import yf
 import pandas as pd
 
 def download_index(symbol, start="2023-01-01"):

@@ -1,4 +1,4 @@
-from utilites.diversification.portfolio_variance import portfolio_variance
+from utilities.diversification.portfolio_variance import portfolio_variance
 import numpy as np
 
 

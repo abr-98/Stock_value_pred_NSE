@@ -1,6 +1,6 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
-from utilites.sentiment.build_sentiment_rationale import build_sentiment_rationale
+from utilities.sentiment.build_sentiment_rationale import build_sentiment_rationale
 
 
 class SentimentAgent(StockAgent):

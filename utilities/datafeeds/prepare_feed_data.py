@@ -1,7 +1,7 @@
-from utilites.model_utilities.get_all_models import get_all_models
-from utilites.datafeeds.get_all_sector_data import get_all_sector_data
-from utilites.datafeeds.get_feature_sets_for_pred import get_feature_sets_for_pred
-from utilites.datafeeds.get_feed_data import get_feed_data
+from utilities.model_utilities.get_all_models import get_all_models
+from utilities.datafeeds.get_all_sector_data import get_all_sector_data
+from utilities.datafeeds.get_feature_sets_for_pred import get_feature_sets_for_pred
+from utilities.datafeeds.get_feed_data import get_feed_data
 
 
 def prepare_feed_data():

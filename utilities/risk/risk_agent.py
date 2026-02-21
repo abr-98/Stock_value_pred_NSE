@@ -1,8 +1,8 @@
-from utilites.risk.returns import returns
-from utilites.risk.max_drawdown import max_drawdown
-from utilites.risk.rolling_volatility import rolling_volatility
-from utilites.risk.cvar import cvar
-from utilites.serialization_helper import convert_to_serializable
+from utilities.risk.returns import returns
+from utilities.risk.max_drawdown import max_drawdown
+from utilities.risk.rolling_volatility import rolling_volatility
+from utilities.risk.cvar import cvar
+from utilities.serialization_helper import convert_to_serializable
 import pandas as pd
 
 
