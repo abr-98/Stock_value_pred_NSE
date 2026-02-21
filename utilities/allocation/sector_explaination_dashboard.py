@@ -1,4 +1,4 @@
-from utilites.allocation.aggregate_lime_by_feature import aggregate_lime_by_feature
+from utilities.allocation.aggregate_lime_by_feature import aggregate_lime_by_feature
 
 def sector_explanation_dashboard(
     allocation,

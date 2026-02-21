@@ -1,4 +1,4 @@
-from utilites.allocation.trend_strength import trend_strength
+from utilities.allocation.trend_strength import trend_strength
 
 def score_defensive_asset(row, nifty_trend):
     """

@@ -7,12 +7,12 @@
 #### Problem:
 The model loading functions had hardcoded incorrect paths:
 
-**File: `utilites/model_utilities/load_models.py`**
+**File: `utilities/model_utilities/load_models.py`**
 - Used absolute path: `/models/best_lstm_return_model_{sector}.pt`
 - This path starts from root directory (Linux/Unix style)
 - Would fail on Windows and in any non-root installation
 
-**File: `utilites/model_utilities/load_nifty_50.py`**
+**File: `utilities/model_utilities/load_nifty_50.py`**
 - Used Google Colab path: `/content/best_lstm_return_model.pt`
 - This only works in Google Colab environment
 - Would fail in local development
@@ -100,17 +100,17 @@ All imports are consistent and correct:
 - ✅ `application.engines.*` - Business logic engines
 
 #### Utilities Layer:
-- ✅ `utilites.technical.*` - Technical analysis
-- ✅ `utilites.fundamental.*` - Fundamental analysis
-- ✅ `utilites.sentiment.*` - Sentiment analysis
-- ✅ `utilites.regime.*` - Market regime detection
-- ✅ `utilites.risk.*` - Risk metrics
-- ✅ `utilites.allocation.*` - Asset allocation
-- ✅ `utilites.diversification.*` - Diversification metrics
-- ✅ `utilites.correlation.*` - Correlation analysis
-- ✅ `utilites.model_utilities.*` - ML model utilities
-- ✅ `utilites.datafeeds.*` - Data fetching
-- ✅ `utilites.fundamental_document.*` - Document analysis
+- ✅ `utilities.technical.*` - Technical analysis
+- ✅ `utilities.fundamental.*` - Fundamental analysis
+- ✅ `utilities.sentiment.*` - Sentiment analysis
+- ✅ `utilities.regime.*` - Market regime detection
+- ✅ `utilities.risk.*` - Risk metrics
+- ✅ `utilities.allocation.*` - Asset allocation
+- ✅ `utilities.diversification.*` - Diversification metrics
+- ✅ `utilities.correlation.*` - Correlation analysis
+- ✅ `utilities.model_utilities.*` - ML model utilities
+- ✅ `utilities.datafeeds.*` - Data fetching
+- ✅ `utilities.fundamental_document.*` - Document analysis
 
 #### Agents Layer:
 - ✅ `agents.*` - All agent classes
@@ -177,8 +177,8 @@ python apis/start_server.py
 
 ## Files Modified
 
-1. ✅ `utilites/model_utilities/load_models.py` - Fixed model paths, added error handling
-2. ✅ `utilites/model_utilities/load_nifty_50.py` - Fixed model paths, added error handling
+1. ✅ `utilities/model_utilities/load_models.py` - Fixed model paths, added error handling
+2. ✅ `utilities/model_utilities/load_nifty_50.py` - Fixed model paths, added error handling
 3. ✅ `application/helpers/vectordb.py` - Fixed VectorDB path to be relative
 4. ✅ `requirements.txt` - Already correct (no changes needed)
 

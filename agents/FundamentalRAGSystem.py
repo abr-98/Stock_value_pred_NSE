@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
-from utilites.fundamental_document.ReportSummarizationAgent import ReportSummarizationAgent
-from utilites.fundamental_document.FundamentalReasoningAgent import FundamentalReasoningAgent
-from utilites.fundamental_document.InterpretationAgent import InterpretationAgent
+from utilities.fundamental_document.ReportSummarizationAgent import ReportSummarizationAgent
+from utilities.fundamental_document.FundamentalReasoningAgent import FundamentalReasoningAgent
+from utilities.fundamental_document.InterpretationAgent import InterpretationAgent
 
 
 class FundamentalRAGSystem:

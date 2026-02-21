@@ -1,5 +1,5 @@
 import pandas as pd
-from utilites.datafeeds.fetch_nse_index import fetch_nse_index
+from utilities.datafeeds.fetch_nse_index import fetch_nse_index
 
 def top_gainers_in_sector(index_name: str, top_n: int = 5):
     """

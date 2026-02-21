@@ -1,4 +1,4 @@
-from utilites.fundamental.utility import volatility
+from utilities.fundamental.utility import volatility
 
 def quarterly_analysis(income_q):
     revenue = income_q.loc["Total Revenue"]

@@ -1,5 +1,5 @@
 
-from utilites.technical.volume_ratio import volume_ratio
+from utilities.technical.volume_ratio import volume_ratio
 
 
 def volume_spike(volume, period=20, threshold=3.0):

@@ -1,10 +1,10 @@
 from datetime import datetime
-from utilites.fundamental_document.get_annual_reports_feed import get_annual_reports_feed
-from utilites.fundamental_document.download_pdf import download_pdf
-from utilites.fundamental_document.extract_pdf_text import extract_pdf_text
-from utilites.fundamental_document.build_chunks import build_chunks
-from utilites.fundamental_document.build_vector_store import build_vector_store
-from utilites.fundamental_document.FundamentalRAGSystem import FundamentalRAGSystem
+from utilities.fundamental_document.get_annual_reports_feed import get_annual_reports_feed
+from utilities.fundamental_document.download_pdf import download_pdf
+from utilities.fundamental_document.extract_pdf_text import extract_pdf_text
+from utilities.fundamental_document.build_chunks import build_chunks
+from utilities.fundamental_document.build_vector_store import build_vector_store
+from utilities.fundamental_document.FundamentalRAGSystem import FundamentalRAGSystem
 
 def get_company_earning_analysis(symbol):
     symbol = symbol.upper().replace(".NS", "")

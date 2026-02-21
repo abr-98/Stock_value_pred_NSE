@@ -151,6 +151,44 @@ def get_fundamental_report(symbol):
     print()
 
 
+def analyze_memory(symbol):
+    """Analyze memory patterns for a stock"""
+    print("=" * 60)
+    print(f"Memory Analysis - {symbol}")
+    print("=" * 60)
+
+    response = requests.post(
+        f"{BASE_URL}/api/v1/memory/analyze",
+        json={"symbol": symbol}
+    )
+
+    print(f"Status Code: {response.status_code}")
+    if response.status_code == 200:
+        print(f"Response: {json.dumps(response.json(), indent=2)}")
+    else:
+        print(f"Error: {response.text}")
+    print()
+
+
+def analyze_explain(symbol):
+    """Analyze explainability for a stock"""
+    print("=" * 60)
+    print(f"Explain Analysis - {symbol}")
+    print("=" * 60)
+
+    response = requests.post(
+        f"{BASE_URL}/api/v1/explain/analyze",
+        json={"symbol": symbol}
+    )
+
+    print(f"Status Code: {response.status_code}")
+    if response.status_code == 200:
+        print(f"Response: {json.dumps(response.json(), indent=2)}")
+    else:
+        print(f"Error: {response.text}")
+    print()
+
+
 if __name__ == "__main__":
     print("\n")
     print("╔═══════════════════════════════════════════════════════╗")
@@ -175,6 +213,8 @@ if __name__ == "__main__":
         # get_allocation()
         # analyze_correlation(test_symbol)
         # get_fundamental_report(test_symbol)
+        # analyze_memory(test_symbol)
+        # analyze_explain(test_symbol)
         
         print("✓ All example tests completed!")
         

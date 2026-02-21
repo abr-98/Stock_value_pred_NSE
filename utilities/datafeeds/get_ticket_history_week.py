@@ -1,4 +1,4 @@
-from utilites.datafeeds.yfinance_config import yf
+from utilities.datafeeds.yfinance_config import yf
 
 def get_ticker_history_week(ticker_symbol):
     ticker = yf.Ticker(ticker_symbol)

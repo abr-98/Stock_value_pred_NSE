@@ -1,12 +1,12 @@
 from torch.cuda import device
 import pandas as pd
 import torch
-from utilites.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
-from utilites.model_utilities.get_all_models import get_all_models
-from utilites.datafeeds.get_nifty_50 import get_nifty_50
-from utilites.datafeeds.prepare_feed_data import prepare_feed_data
-from utilites.allocation.top_gainers_in_sector import top_gainers_in_sector
-from utilites.allocation.sector_explaination_dashboard import sector_explanation_dashboard
+from utilities.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
+from utilities.model_utilities.get_all_models import get_all_models
+from utilities.datafeeds.get_nifty_50 import get_nifty_50
+from utilities.datafeeds.prepare_feed_data import prepare_feed_data
+from utilities.allocation.top_gainers_in_sector import top_gainers_in_sector
+from utilities.allocation.sector_explaination_dashboard import sector_explanation_dashboard
 
 
 def get_propositions(sector_weights=None, fetch_nse_data=True):
@@ -56,6 +56,8 @@ def get_propositions(sector_weights=None, fetch_nse_data=True):
 
   stock_based = []
   top_gainers = None
+
+  """
   
   # Only fetch NSE data if requested
   if fetch_nse_data:
@@ -90,4 +92,5 @@ def get_propositions(sector_weights=None, fetch_nse_data=True):
     propositions["nse_data_available"] = False
   
   propositions["stock_to_invest"] = stock_to_invest
+  """
   return propositions

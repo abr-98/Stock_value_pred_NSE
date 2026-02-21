@@ -14,7 +14,15 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from apis.routers import stock_router, portfolio_router, allocation_router, correlation_router, fundamental_router
+from apis.routers import (
+    stock_router,
+    portfolio_router,
+    allocation_router,
+    correlation_router,
+    fundamental_router,
+    memory_router,
+    explain_router,
+)
 from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
 
@@ -90,6 +98,8 @@ app.include_router(portfolio_router.router, prefix="/api/v1/portfolio", tags=["P
 app.include_router(allocation_router.router, prefix="/api/v1/allocation", tags=["Allocation"])
 app.include_router(correlation_router.router, prefix="/api/v1/correlation", tags=["Correlation"])
 app.include_router(fundamental_router.router, prefix="/api/v1/fundamental", tags=["Fundamental"])
+app.include_router(memory_router.router, prefix="/api/v1/memory", tags=["Memory"])
+app.include_router(explain_router.router, prefix="/api/v1/explain", tags=["Explain"])
 
 
 @app.get("/")

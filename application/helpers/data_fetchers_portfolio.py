@@ -1,4 +1,4 @@
-from utilites.datafeeds.get_price_history import get_price_history
+from utilities.datafeeds.get_price_history import get_price_history
 
 
 class DataFetchersPortfolio:

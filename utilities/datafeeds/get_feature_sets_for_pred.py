@@ -1,5 +1,5 @@
-from utilites.datafeeds.create_dataframe import create_dataframe
-from utilites.datafeeds.make_lstm_sequences import make_lstm_sequences
+from utilities.datafeeds.create_dataframe import create_dataframe
+from utilities.datafeeds.make_lstm_sequences import make_lstm_sequences
 
 def get_feature_sets_for_pred(sector_data):
   feature_sets = {}

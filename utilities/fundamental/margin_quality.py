@@ -1,4 +1,4 @@
-from utilites.fundamental.utility import cagr
+from utilities.fundamental.utility import cagr
 
 def margin_quality(income_a):
     revenue = income_a.loc["Total Revenue"]

@@ -32,6 +32,10 @@ These pre-initialized agents are reused across all API requests, significantly i
 - **Fundamental Reports**: Detailed fundamental analysis reports
 - **Optimized Performance**: Agents initialized once on startup, reused across requests
 
+Additional pre-initialized agents now exposed via API:
+- Memory Agent
+- Explain Agent
+
 ## Installation
 
 1. Ensure `OpenAI-Key.txt` exists in the project root with your OpenAI API key
@@ -133,6 +137,28 @@ uvicorn apis.main:app --host 0.0.0.0 --port 8000 --workers 4
 {
   "symbol": "AAPL"
 }
+
+### Memory Analysis
+- `POST /api/v1/memory/analyze` - Run memory analysis (POST)
+- `GET /api/v1/memory/analyze/{symbol}` - Run memory analysis (GET)
+
+**Example Request (POST)**:
+```json
+{
+  "symbol": "AAPL"
+}
+```
+
+### Explain Analysis
+- `POST /api/v1/explain/analyze` - Run explain analysis (POST)
+- `GET /api/v1/explain/analyze/{symbol}` - Run explain analysis (GET)
+
+**Example Request (POST)**:
+```json
+{
+  "symbol": "AAPL"
+}
+```
 ```
 
 ## API Documentation
@@ -158,7 +184,9 @@ apis/
     ├── portfolio_router.py    # Portfolio analysis endpoints
     ├── allocation_router.py   # Allocation endpoints
     ├── correlation_router.py  # Correlation analysis endpoints
-    └── fundamental_router.py  # Fundamental report endpoints
+    ├── fundamental_router.py  # Fundamental report endpoints
+    ├── memory_router.py       # Memory analysis endpoints
+    └── explain_router.py      # Explain analysis endpoints
 ```
 
 ## Configuration

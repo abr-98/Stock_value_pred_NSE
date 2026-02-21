@@ -1,5 +1,5 @@
 import feedparser
-from utilites.sentiment.urls import RSS_FEEDS
+from utilities.sentiment.urls import RSS_FEEDS
 
 def get_news_national():
   for url in RSS_FEEDS.values():

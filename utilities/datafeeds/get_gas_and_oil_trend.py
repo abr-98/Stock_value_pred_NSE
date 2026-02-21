@@ -1,7 +1,7 @@
-from utilites.datafeeds.yfinance_config import yf
+from utilities.datafeeds.yfinance_config import yf
 import pandas as pd
-from utilites.technical.rsi import rsi
-from utilites.technical.ema import ema
+from utilities.technical.rsi import rsi
+from utilities.technical.ema import ema
 
 def get_gas_and_oil_trend():
   stocks = ["RELIANCE.NS", "ONGC.NS", "IOC.NS", "BPCL.NS", "GAIL.NS"]

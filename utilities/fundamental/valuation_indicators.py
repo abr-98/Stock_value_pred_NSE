@@ -1,4 +1,4 @@
-from utilites.fundamental.utility import safe_div, ttm
+from utilities.fundamental.utility import safe_div, ttm
 
 def valuation_indicators(info, income_q, cashflow_q):
     price = info["currentPrice"]

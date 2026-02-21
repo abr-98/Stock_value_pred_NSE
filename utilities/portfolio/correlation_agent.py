@@ -1,11 +1,11 @@
-from utilites.diversification.log_returns import log_returns
-from utilites.portfolio.avg_pairwise_corr import avg_pairwise_corr
-from utilites.portfolio.effective_number_of_bets import effective_number_of_bets
-from utilites.portfolio.variance_contribution import variance_contribution
-from utilites.portfolio.pairwise_correlation import pairwise_correlation
-from utilites.portfolio.correlation_regime import correlation_regime
-from utilites.portfolio.risk_agent import portfolio_risk_agent
-from utilites.serialization_helper import convert_to_serializable
+from utilities.diversification.log_returns import log_returns
+from utilities.portfolio.avg_pairwise_corr import avg_pairwise_corr
+from utilities.portfolio.effective_number_of_bets import effective_number_of_bets
+from utilities.portfolio.variance_contribution import variance_contribution
+from utilities.portfolio.pairwise_correlation import pairwise_correlation
+from utilities.portfolio.correlation_regime import correlation_regime
+from utilities.portfolio.risk_agent import portfolio_risk_agent
+from utilities.serialization_helper import convert_to_serializable
 import pandas as pd
 
 def correlation_agent(data: dict):

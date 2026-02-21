@@ -6,7 +6,9 @@ from apis.routers import (
     portfolio_router,
     allocation_router,
     correlation_router,
-    fundamental_router
+    fundamental_router,
+    memory_router,
+    explain_router,
 )
 
 __all__ = [
@@ -14,5 +16,7 @@ __all__ = [
     "portfolio_router",
     "allocation_router",
     "correlation_router",
-    "fundamental_router"
+    "fundamental_router",
+    "memory_router",
+    "explain_router",
 ]

@@ -1,7 +1,7 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
 import numpy as np
-from utilites.risk.build_risk_rationale import build_risk_rationale
+from utilities.risk.build_risk_rationale import build_risk_rationale
 
 
 class RiskAgent(StockAgent):

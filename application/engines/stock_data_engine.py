@@ -1,9 +1,9 @@
 from application.orchestrators.stock_data_fetch_orchestrators import StockDataFetchOrchestrator
-from utilites.technical.technical_agent import technical_agent
-from utilites.regime.regime_agent import regime_agent
-from utilites.risk.risk_agent import risk_agent
-from utilites.fundamental.fundamental_agent import fundamental_agent
-from utilites.sentiment.get_sentiment import get_sentiment
+from utilities.technical.technical_agent import technical_agent
+from utilities.regime.regime_agent import regime_agent
+from utilities.risk.risk_agent import risk_agent
+from utilities.fundamental.fundamental_agent import fundamental_agent
+from utilities.sentiment.get_sentiment import get_sentiment
 from agents.StockSignalAggregatorAgent import StockSignalAggregatorAgent
 from application.helpers.initializers import SystemInitializer
 

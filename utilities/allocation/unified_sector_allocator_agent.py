@@ -1,10 +1,10 @@
 import numpy as np
-from utilites.allocation.check_trend import check_trend
-from utilites.model_utilities.predict_lstm import predict_lstm
-from utilites.allocation.trend_strength import trend_strength
-from utilites.allocation.sector_score import score_sector
-from utilites.model_utilities.explain_lstm_instance import explain_lstm_instance
-from utilites.datafeeds.yfinance_config import yf
+from utilities.allocation.check_trend import check_trend
+from utilities.model_utilities.predict_lstm import predict_lstm
+from utilities.allocation.trend_strength import trend_strength
+from utilities.allocation.sector_score import score_sector
+from utilities.model_utilities.explain_lstm_instance import explain_lstm_instance
+from utilities.datafeeds.yfinance_config import yf
 
 class UnifiedSectorAllocatorAgent:
     def __init__(

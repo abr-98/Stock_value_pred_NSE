@@ -1,5 +1,5 @@
-from utilites.fundamental_document.download_pdf import download_pdf
-from utilites.fundamental_document.get_annual_reports_feed import get_annual_reports_feed
+from utilities.fundamental_document.download_pdf import download_pdf
+from utilities.fundamental_document.get_annual_reports_feed import get_annual_reports_feed
 
 
 class DataFetchersReport:

@@ -1,6 +1,6 @@
-from utilites.portfolio.correlation_agent import correlation_agent
-from utilites.portfolio.build_portfolio_rationale import build_portfolio_rationale
-from utilites.serialization_helper import convert_to_serializable
+from utilities.portfolio.correlation_agent import correlation_agent
+from utilities.portfolio.build_portfolio_rationale import build_portfolio_rationale
+from utilities.serialization_helper import convert_to_serializable
 
 class PortfolioAnalysisAgent:
     """
