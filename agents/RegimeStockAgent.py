@@ -1,6 +1,6 @@
 from agents.StockAgent import BaseAgent
 from agents.RegimeSignal import RegimeSignal
-from utilites.regime.build_regime_rationale import build_regime_rationale
+from utilities.regime.build_regime_rationale import build_regime_rationale
 
 
 class RegimeStockAgent(BaseAgent):

@@ -1,6 +1,6 @@
-from utilites.datafeeds.download_index import download_index
-from utilites.datafeeds.synthetic_basket import synthetic_basket
-from utilites.datafeeds.yfinance_config import yf
+from utilities.datafeeds.download_index import download_index
+from utilities.datafeeds.synthetic_basket import synthetic_basket
+from utilities.datafeeds.yfinance_config import yf
 import pandas as pd
 
 

@@ -1,6 +1,6 @@
-from utilites.regime.adx import adx
-from utilites.regime.atr import atr
-from utilites.serialization_helper import convert_to_serializable
+from utilities.regime.adx import adx
+from utilities.regime.atr import atr
+from utilities.serialization_helper import convert_to_serializable
 
 def regime_agent(df):
     """

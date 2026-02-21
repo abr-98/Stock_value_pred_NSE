@@ -1,6 +1,6 @@
-from utilites.model_utilities.load_models import load_models
-from utilites.model_utilities.load_nifty_50 import load_nifty_50
-from utilites.model_utilities.lstm_model import ResidualLSTM
+from utilities.model_utilities.load_models import load_models
+from utilities.model_utilities.load_nifty_50 import load_nifty_50
+from utilities.model_utilities.lstm_model import ResidualLSTM
 
 def get_all_models():
   model = ResidualLSTM(

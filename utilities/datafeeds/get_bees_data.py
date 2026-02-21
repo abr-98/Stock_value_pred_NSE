@@ -1,4 +1,4 @@
-from utilites.datafeeds.get_ticket_history_week import get_ticker_history_week
+from utilities.datafeeds.get_ticket_history_week import get_ticker_history_week
 
 
 def get_bees_data():

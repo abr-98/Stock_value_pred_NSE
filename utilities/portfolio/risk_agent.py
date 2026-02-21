@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from utilites.portfolio.build_price_matrix import build_price_matrix
+from utilities.portfolio.build_price_matrix import build_price_matrix
 
 def portfolio_risk_agent(history_dict):
 

@@ -1,6 +1,6 @@
 import requests
 import json
-from utilites.fundamental_document.parse_nse_annual_reports import parse_nse_annual_reports
+from utilities.fundamental_document.parse_nse_annual_reports import parse_nse_annual_reports
 
 def get_annual_reports_feed(symbol):
 

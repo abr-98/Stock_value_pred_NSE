@@ -1,7 +1,7 @@
 from agents.StockAgent import StockAgent
 from agents.StockSignal import StockSignal
 import numpy as np
-from utilites.fundamental.build_fundamental_rationale import build_fundamental_rationale
+from utilities.fundamental.build_fundamental_rationale import build_fundamental_rationale
 
 class FundamentalAgent(StockAgent):
     """

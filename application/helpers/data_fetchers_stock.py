@@ -1,6 +1,6 @@
-from utilites.datafeeds.get_ticket_history import get_ticker_history
-from utilites.datafeeds.get_ticket_history_week import get_ticker_history_week
-from utilites.datafeeds.get_nifty_50 import get_nifty_50
+from utilities.datafeeds.get_ticket_history import get_ticker_history
+from utilities.datafeeds.get_ticket_history_week import get_ticker_history_week
+from utilities.datafeeds.get_nifty_50 import get_nifty_50
 import pandas as pd
 
 class DataFetcherStock:

@@ -1,7 +1,7 @@
-from utilites.allocation.trend_direction import trend_direction
-from utilites.allocation.trend_persistence import trend_persistence
-from utilites.allocation.trend_quality import trend_quality
-from utilites.allocation.trend_slope import trend_slope
+from utilities.allocation.trend_direction import trend_direction
+from utilities.allocation.trend_persistence import trend_persistence
+from utilities.allocation.trend_quality import trend_quality
+from utilities.allocation.trend_slope import trend_slope
 
 
 def compute_trend_strength_window(df, lookback=50):

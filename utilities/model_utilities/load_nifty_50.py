@@ -1,6 +1,6 @@
 import torch
 import os
-from utilites.model_utilities.lstm_model import ResidualLSTM
+from utilities.model_utilities.lstm_model import ResidualLSTM
 
 def load_nifty_50(models):
     model_nifty_50 = ResidualLSTM(input_dim=9, hidden_dim=32)

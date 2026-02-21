@@ -1,6 +1,6 @@
-from utilites.datafeeds.get_ticket_history_week import get_ticker_history_week
-from utilites.datafeeds.create_dataframe import create_dataframe
-from utilites.datafeeds.make_lstm_sequences import make_lstm_sequences
+from utilities.datafeeds.get_ticket_history_week import get_ticker_history_week
+from utilities.datafeeds.create_dataframe import create_dataframe
+from utilities.datafeeds.make_lstm_sequences import make_lstm_sequences
 
 
 def get_nifty_50(models):

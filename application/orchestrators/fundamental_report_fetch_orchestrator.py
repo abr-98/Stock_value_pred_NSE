@@ -1,5 +1,5 @@
 from application.helpers.data_fetcher_report import DataFetchersReport
-from utilites.fundamental_document.build_vector_store import build_vector_store
+from utilities.fundamental_document.build_vector_store import build_vector_store
 
 class FundamentalReportFetchOrchestrator:
     """

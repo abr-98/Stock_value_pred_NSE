@@ -33,6 +33,16 @@ class FundamentalReportRequest(BaseModel):
     symbol: str = Field(..., description="Stock symbol to analyze", example="AAPL")
 
 
+class MemoryAnalysisRequest(BaseModel):
+    """Request model for memory analysis"""
+    symbol: str = Field(..., description="Stock symbol to analyze", example="AAPL")
+
+
+class ExplainAnalysisRequest(BaseModel):
+    """Request model for explain analysis"""
+    symbol: str = Field(..., description="Stock symbol to analyze", example="AAPL")
+
+
 # Response Models
 class StockAnalysisResponse(BaseModel):
     """Response model for stock analysis"""
@@ -68,6 +78,20 @@ class FundamentalReportResponse(BaseModel):
     status: str = Field(default="success", description="Response status")
     symbol: str = Field(..., description="Analyzed stock symbol")
     report: Dict[str, Any] = Field(..., description="Fundamental analysis report")
+
+
+class MemoryAnalysisResponse(BaseModel):
+    """Response model for memory analysis"""
+    status: str = Field(default="success", description="Response status")
+    symbol: str = Field(..., description="Analyzed stock symbol")
+    report: Dict[str, Any] = Field(..., description="Memory analysis report")
+
+
+class ExplainAnalysisResponse(BaseModel):
+    """Response model for explain analysis"""
+    status: str = Field(default="success", description="Response status")
+    symbol: str = Field(..., description="Analyzed stock symbol")
+    report: Dict[str, Any] = Field(..., description="Explain analysis report")
 
 
 class ErrorResponse(BaseModel):
