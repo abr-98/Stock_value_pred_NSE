@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Stock Analysis Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  <header class="header">
+    <h1>Stock Analysis Dashboard</h1>
+    <div class="api-config">
+      <label for="api-base">API Base URL</label>
+      <input id="api-base" value="http://localhost:8000">
+      <button onclick="saveApiBase()">Apply</button>
+      <button class="secondary" onclick="checkHealth()">Health Check</button>
+    </div>
+  </header>
+
+  <section class="grid two-col">
+    <div class="card">
+      <h3>Portfolio Input</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Quantity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="portfolio-body"></tbody>
+      </table>
+
+      <div class="row-actions">
+        <button onclick="addRow()">Add Stock</button>
+      </div>
+
+      <div class="field-row">
+        <label for="portfolio-value">Portfolio Value</label>
+        <input id="portfolio-value" placeholder="e.g. 100000" type="number">
+      </div>
+
+      <div class="row-actions">
+        <button onclick="analyzePortfolio()">Run Portfolio + Allocation</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Stock Tools</h3>
+      <div class="field-row">
+        <label for="stock-symbol">Stock Symbol</label>
+        <input id="stock-symbol" placeholder="e.g. TCS.NS">
+      </div>
+
+      <div class="button-grid">
+        <button onclick="runStockAnalysis()">Stock Analysis</button>
+        <button onclick="runCorrelationAnalysis()">Correlation to Market and Regime</button>
+        <button onclick="runFundamentalReport()">Fundamental Earning Report</button>
+        <button onclick="runMemoryAnalysis()">Expected Return Analysis</button>
+        <button onclick="runExplainAnalysis()">Market Indicator Impact Analyzer</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid two-col">
+    <div class="card">
+      <h3>Health</h3>
+      <pre id="health-result">Click "Health Check" to verify API connection.</pre>
+    </div>
+
+    <div class="card">
+      <h3>Status</h3>
+      <pre id="status-result">Ready.</pre>
+    </div>
+  </section>
+
+   <div class="card">
+    <h3>Portfolio Analysis</h3>
+
+    <div id="portfolio-metrics"></div>
+    <div id="portfolio-result"></div>
+
+    <div class="chart-grid">
+      <div class="chart-container">
+        <div class="chart-title">Variance Concentration</div>
+        <canvas id="varianceChart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Risk Diagnostics</div>
+        <canvas id="riskChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Sector Return Dynamics</div>
+      <canvas id="sectorReturnChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Diversification Analysis</h3>
+
+    <div id="diversification-metrics"></div>
+
+    <div class="chart-grid">
+      <div class="chart-container">
+        <div class="chart-title">Sector Allocation</div>
+        <canvas id="sectorWeightChart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Sector Risk Contribution</div>
+        <canvas id="sectorRiskChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+  <h3>Allocation Recommendations</h3>
+
+  <div class="chart-grid">
+    <div class="chart-container">
+      <div class="chart-title">Sector Allocation Mix</div>
+      <canvas id="allocationPieChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Sector Allocation Strength</div>
+      <canvas id="allocationBarChart"></canvas>
+    </div>
+  </div>
+</div>
+
+
+  </section>
+
+  <section class="grid two-col">
+    <div class="card">
+  <h3>Stock Analysis Dashboard</h3>
+
+  <div id="stock-summary"></div>
+
+  <div class="chart-grid">
+
+    <div class="chart-container">
+      <div class="chart-title">Agent Scores</div>
+      <canvas id="agentScoreChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Agent Confidence</div>
+      <canvas id="agentConfidenceChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">System Diagnostics</div>
+      <canvas id="diagnosticsChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Regime State</div>
+      <canvas id="regimeChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Technical Structure</div>
+      <canvas id="technicalChart"></canvas>
+    </div>
+
+  </div>
+
+  <div id="stock-rationale"></div>
+</div>
+
+
+    <div class="card">
+      <h3>Correlation to Market and Regime</h3>
+      <pre id="correlation-result"></pre>
+    </div>
+  </section>
+
+  <section class="grid two-col">
+    <div class="card">
+      <h3>Fundamental Earning Report</h3>
+      <pre id="fundamental-result"></pre>
+    </div>
+</section>
+  <div class="card">
+  <h3>Expected Return Analysis Dashboard</h3>
+
+  <div id="memory-summary"></div>
+
+  <div class="chart-grid">
+
+    <div class="chart-container">
+      <div class="chart-title">Forward Behaviour Profile</div>
+      <canvas id="memoryBehaviourChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Similarity Diagnostics</div>
+      <canvas id="memoryDistanceChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Matched Regime Returns</div>
+      <canvas id="memoryReturnsChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Matched Regime Risk Structure</div>
+      <canvas id="memoryRiskChart"></canvas>
+    </div>
+
+  </div>
+</div>
+
+
+  <section class="grid one-col">
+    <div class="card">
+  <h3>Stock Movement Indicator Impact Dashboard</h3>
+
+  <div id="explain-summary"></div>
+
+  <div class="chart-grid">
+
+    <div class="chart-container">
+      <div class="chart-title">Linear Model Drivers</div>
+      <canvas id="linearExplainChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-title">Decision Tree Drivers</div>
+      <canvas id="treeExplainChart"></canvas>
+    </div>
+
+  </div>
+
+  <div id="explain-rationale"></div>
+</div>
+
+  </section>
+</div>
+
+<script src="app.js"></script>
+
+<script>
+  initDashboard();
+</script>
+
+</body>
+</html>
