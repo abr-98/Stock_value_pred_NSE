@@ -6,8 +6,8 @@ class DataFetchersCorrelation:
     Does NOT compute indicators.
     """
 
-    def build_market_state(self) -> dict:
+    def build_market_state(self, symbol) -> dict:
 
         return { 
-            "correlation_data": DataFetcherCorrelation.fetch_correlation_data()
+            "correlation_data": DataFetcherCorrelation.fetch_correlation_data(symbol)
         }

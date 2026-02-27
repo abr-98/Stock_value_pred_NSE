@@ -13,8 +13,8 @@ def get_nifty_and_sector_data(sector):
         # 1. BANKING
         "NIFTY BANK": download_index("^NSEBANK"),
 
-        # 2. IT
-        "NIFTY IT": download_index("^CNXIT"),
+        # 2. TECHNOLOGY
+        "NIFTY TECHNOLOGY": download_index("^CNXIT"),
 
         # 3. PHARMA
         "NIFTY PHARMA": download_index("^CNXPHARMA"),
