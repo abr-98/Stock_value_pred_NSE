@@ -27,3 +27,9 @@ urllib3==2.6.2
 requests
 faiss-cpu
 scikit-learn
+fastmcp
+langgraph
+langchain-mcp-adapters
+langchain_tavily
+ipykernel
+pdfplumber

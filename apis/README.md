@@ -72,6 +72,50 @@ uvicorn apis.main:app --reload --host 0.0.0.0 --port 8000
 uvicorn apis.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
+## Running As MCP Tools (FastMCP)
+
+This project now includes an MCP server that exposes the same analysis capabilities as tools.
+
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Start MCP server (stdio transport):
+```bash
+python apis/start_mcp_server.py
+```
+
+You can also run directly:
+```bash
+python apis/mcp_server.py
+```
+
+### Available MCP Tools
+
+- `health_check`
+- `analyze_stock(symbol)`
+- `analyze_portfolio(portfolio, value)`
+- `get_allocation(portfolio=None, value=None)`
+- `analyze_correlation(symbol)`
+- `get_fundamental_report(symbol)`
+- `analyze_memory(symbol)`
+- `analyze_explain(symbol)`
+
+### Example MCP Client Config (stdio)
+
+```json
+{
+  "mcpServers": {
+    "stock-predictor": {
+      "command": "python",
+      "args": ["apis/start_mcp_server.py"],
+      "cwd": "D:/personal/Stock_value_pred_NSE"
+    }
+  }
+}
+```
+
 ## API Endpoints
 
 ### Health Check
