@@ -92,8 +92,30 @@ def build_news_dataframe(company_slug, keywords, ticker):
     # DEDUPLICATION
     # ---------------------------
     df = df.drop_duplicates(subset=["url"])
+    
+    df["company"] = company_slug
+    
+    df["date"] = pd.to_datetime(
+    df["published"],
+    format="mixed",     # handles multiple formats
+    errors="coerce",    # avoids crashes
+    utc=True            # standardize timezone
+    )
+    
+    df["date"] = df["date"].fillna(pd.Timestamp.now(tz="UTC"))
+
+    # Extract year, month, day
+    df["year"] = df["date"].dt.year
+    df["month"] = df["date"].dt.month
+    df["day"] = df["date"].dt.day
+    
+    df["year"] = df["year"].astype("int32")
+    df["month"] = df["month"].astype("int32")
+    df["day"] = df["day"].astype("int32")
 
     # optional: sort by time
     df = df.sort_values(by="published", ascending=False, na_position="last")
+    
+    df_final = df[["company", "title", "url", "year", "month", "day"]]
 
-    return df
+    return df_final
