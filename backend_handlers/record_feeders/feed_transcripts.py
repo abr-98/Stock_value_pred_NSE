@@ -1,4 +1,4 @@
-from .transcripts.transcript_final_executor import process_transcripts
+from .transcripts_handlers.transcript_final_executor import process_transcripts
 from ..database_utilities.write_database import insert_dataframe
 
 
