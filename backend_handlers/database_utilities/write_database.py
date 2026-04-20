@@ -1,13 +1,14 @@
 import psycopg2
 from psycopg2.extras import execute_values
 
-def insert_dataframe(df, table_name):
+def insert_dataframe(df, table_name, unique_columns=None):
     """
     Insert pandas DataFrame into PostgreSQL table
 
     Args:
         df: pandas DataFrame
         table_name: target table name
+        unique_columns: list of columns that should be unique (optional)
     """
     
     conn_params = {
@@ -31,12 +32,20 @@ def insert_dataframe(df, table_name):
 
     # Convert dataframe to list of tuples
     values = [tuple(x) for x in df.to_numpy()]
-
-    # SQL query
-    query = f"""
-        INSERT INTO {table_name} ({', '.join(cols)})
-        VALUES %s
-    """
+    
+    if unique_columns is not None:
+        
+        # SQL query
+        query = f"""
+            INSERT INTO {table_name} ({', '.join(cols)})
+            VALUES %s
+            ON CONFLICT ({', '.join(unique_columns)}) DO NOTHING
+        """
+    else:
+        query = f"""
+            INSERT INTO {table_name} ({', '.join(cols)})
+            VALUES %s
+        """
 
     try:
         execute_values(cursor, query, values)

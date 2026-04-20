@@ -2,6 +2,7 @@ from torch.cuda import device
 import pandas as pd
 import torch
 from utilities.allocation.unified_sector_allocator_agent import UnifiedSectorAllocatorAgent
+from utilities.allocation.read_top_gainers import read_top_gainers
 from utilities.model_utilities.get_all_models import get_all_models
 from utilities.datafeeds.get_nifty_50 import get_nifty_50
 from utilities.datafeeds.prepare_feed_data import prepare_feed_data
@@ -51,5 +52,13 @@ def get_propositions(sector_weights=None, fetch_nse_data=True):
   )
 
   propositions["allocations"] = allocation
+  
+  top_gainers_in_sector = {}
+  for sector in allocation.keys():
+    gainers_df = read_top_gainers(sector)
+    top_gainers_in_sector[sector] = gainers_df
+    
+  propositions["top_gainers_in_sector"] = top_gainers_in_sector
+    
 
   return propositions
