@@ -150,3 +150,4 @@ spark-warehouse/
 # Directory used in UnitTests
 /.output/
 transcripts/
+transcripts_db/
