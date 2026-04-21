@@ -56,7 +56,7 @@ def get_propositions(sector_weights=None, fetch_nse_data=True):
   top_gainers_in_sector = {}
   for sector in allocation.keys():
     gainers_df = read_top_gainers(sector)
-    top_gainers_in_sector[sector] = gainers_df
+    top_gainers_in_sector[sector] = gainers_df["company"].tolist()
     
   propositions["top_gainers_in_sector"] = top_gainers_in_sector
     

@@ -31,5 +31,6 @@ fastmcp
 langgraph
 langchain-mcp-adapters
 langchain_tavily
+protobuf==3.20.3
 ipykernel
 pdfplumber

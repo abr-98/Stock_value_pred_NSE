@@ -1,10 +1,6 @@
-import datetime
-from datetime import timedelta
 from backend_handlers.database_utilities.execute_query import execute_query_to_dataframe
 
 def read_transcripts_from_database(company_slug):
-    
-    from datetime import datetime, timedelta
 
     query = f"""
     SELECT *
