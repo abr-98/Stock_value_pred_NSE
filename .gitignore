@@ -151,3 +151,4 @@ spark-warehouse/
 /.output/
 transcripts/
 transcripts_db/
+documents/
