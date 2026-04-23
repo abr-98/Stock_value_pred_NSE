@@ -32,7 +32,7 @@ def process_transcripts(symbol):
     }
     data_cons = [filtered_data["transcript"][-1]] + filtered_data["results"][:3]
     
-    path = "transcripts/"
+    path = "../../../transcripts/"
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     version =1
     for item in data_cons:

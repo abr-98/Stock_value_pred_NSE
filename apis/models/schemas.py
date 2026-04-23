@@ -98,4 +98,45 @@ class ErrorResponse(BaseModel):
     """Error response model"""
     status: str = Field(default="error", description="Response status")
     message: str = Field(..., description="Error message")
+
+
+# QnA Summarization Engine models
+class QnAQueryRequest(BaseModel):
+    """Request model for transcript Q&A query"""
+    company_slug: str = Field(..., description="Company slug/ticker identifier", example="TCS.NS")
+    query: str = Field(..., description="Natural language question about the company's transcripts", example="What was the revenue growth in Q3?")
+    workspace_root: Optional[str] = Field(default=None, description="Optional path to workspace root; defaults to project root")
+
+
+class QnAQueryResponse(BaseModel):
+    """Response model for transcript Q&A query"""
+    status: str = Field(default="success", description="Response status")
+    company_slug: str = Field(..., description="Company slug queried")
+    query: str = Field(..., description="The question asked")
+    results: List[Dict[str, Any]] = Field(..., description="Relevant document chunks returned by the vector store")
+
+
+class NewsRequest(BaseModel):
+    """Request model for fetching recent news"""
+    company_slug: str = Field(..., description="Company slug/ticker identifier", example="TCS.NS")
+
+
+class NewsResponse(BaseModel):
+    """Response model for recent news"""
+    status: str = Field(default="success", description="Response status")
+    company_slug: str = Field(..., description="Company slug queried")
+    news: List[Dict[str, Any]] = Field(..., description="Recent news articles from the last 3 days")
+
+
+# SWOT Analysis models
+class SwotAnalysisRequest(BaseModel):
+    """Request model for SWOT analysis"""
+    ticker: str = Field(..., description="Stock ticker symbol (NSE format)", example="TCS.NS")
+
+
+class SwotAnalysisResponse(BaseModel):
+    """Response model for SWOT analysis"""
+    status: str = Field(default="success", description="Response status")
+    ticker: str = Field(..., description="Analysed stock ticker")
+    swot: Dict[str, Any] = Field(..., description="SWOT analysis result with strengths, weaknesses, opportunities, and threats")
     detail: Optional[str] = Field(None, description="Detailed error information")

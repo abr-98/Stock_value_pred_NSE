@@ -9,4 +9,4 @@ def feed_news(company_slug, keywords, ticker):
     print(news_df.head())
  
     # 3. Insert into database
-    insert_dataframe(news_df, "news", unique_columns=["url"])
+    insert_dataframe(news_df, "news_2", unique_columns=["title", "url"])

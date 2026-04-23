@@ -11,4 +11,4 @@ def feed_transcripts(symbol):
     transcripts_df.rename(columns={"symbol": "company", "title": "title", "url": "url", "filepath": "filepath", "date": "date"}, inplace=True)
 
     # 2. Insert into database
-    insert_dataframe(transcripts_df, "transcripts_2", unique_columns=["title", "url"])
+    insert_dataframe(transcripts_df, "transcripts_3", unique_columns=["title", "url"])

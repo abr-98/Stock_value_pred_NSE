@@ -7,7 +7,7 @@ def read_news_from_database(company_slug):
     date_str = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
     query = f"""
     SELECT *
-    FROM news
+    FROM news_2
     WHERE company = '{company_slug}'
     AND MAKE_DATE(year, month, day) >= '{date_str}'
     """

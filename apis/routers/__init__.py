@@ -9,6 +9,8 @@ from apis.routers import (
     fundamental_router,
     memory_router,
     explain_router,
+    qna_router,
+    swot_router,
 )
 
 __all__ = [
@@ -19,4 +21,6 @@ __all__ = [
     "fundamental_router",
     "memory_router",
     "explain_router",
+    "qna_router",
+    "swot_router",
 ]

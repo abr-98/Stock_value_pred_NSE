@@ -293,6 +293,22 @@ function readSymbol() {
   return element.value.trim().toUpperCase();
 }
 
+function readCompanySlug() {
+  const element = document.getElementById("qna-company");
+  if (!element) {
+    return "";
+  }
+  return element.value.trim().toUpperCase();
+}
+
+function readQnAQuestion() {
+  const element = document.getElementById("qna-query");
+  if (!element) {
+    return "";
+  }
+  return element.value.trim();
+}
+
 async function apiCall(path, options = {}) {
   const url = `${API}${path}`;
   const response = await fetch(url, options);
@@ -878,6 +894,59 @@ async function runExplainAnalysis() {
   }
 
   await runRequest("explain-result", "Explain analysis", `/api/v1/explain/analyze/${symbol}`);
+}
+
+async function runSwotAnalysis() {
+  const symbol = readSymbol();
+  if (!symbol) {
+    setText("status-result", "Please enter a stock symbol.");
+    return;
+  }
+
+  await runRequest("swot-result", "SWOT analysis", `/api/v1/swot/analyze/${symbol}`);
+}
+
+async function runQnAQuery() {
+  const companySlug = readCompanySlug() || readSymbol();
+  const query = readQnAQuestion();
+
+  if (!companySlug) {
+    setText("status-result", "Please enter a company slug for QnA.");
+    return;
+  }
+
+  if (!query) {
+    setText("status-result", "Please enter a question for QnA.");
+    return;
+  }
+
+  await runRequest(
+    "qna-result",
+    "QnA query",
+    "/api/v1/qna/query",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company_slug: companySlug,
+        query
+      })
+    }
+  );
+}
+
+async function runQnANews() {
+  const companySlug = readCompanySlug() || readSymbol();
+  if (!companySlug) {
+    setText("status-result", "Please enter a company slug for news.");
+    return;
+  }
+
+  await runRequest(
+    "qna-news-result",
+    "QnA news fetch",
+    `/api/v1/qna/news/${companySlug}`
+  );
 }
 
 async function analyzeStock() {

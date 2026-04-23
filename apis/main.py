@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import sys
 import os
+import logging
 
 # Add project root to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,9 +23,14 @@ from apis.routers import (
     fundamental_router,
     memory_router,
     explain_router,
+    qna_router,
+    swot_router,
 )
 from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
+from apis.logging_config import setup_logging
+
+logger = setup_logging("stock-predictor-api")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -53,43 +59,42 @@ async def startup_event():
     - Initialize vector database
     - Initialize all agents
     """
-    print("=" * 70)
-    print("Starting Stock Predictor API...")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("Starting Stock Predictor API...")
+    logger.info("=" * 70)
     
     try:
         # Load API key from OpenAI-Key.txt
-        print("Loading OpenAI API key...")
+        logger.info("Loading OpenAI API key...")
         load_api_key()
-        print("✓ OpenAI API key loaded successfully")
+        logger.info("OpenAI API key loaded successfully")
         
         # Initialize system (agents, vector DB, etc.)
-        print("Initializing system components...")
+        logger.info("Initializing system components...")
         system_initializer = SystemInitializer()
         system_initializer.initialize_system()
-        print("✓ System initialized successfully")
+        logger.info("System initialized successfully")
         
         # Store initialized agents in app state for reuse
         app.state.system_initializer = system_initializer
         app.state.agents = system_initializer.get_agents()
         
-        print("=" * 70)
-        print("Stock Predictor API is ready!")
-        print("=" * 70)
+        logger.info("=" * 70)
+        logger.info("Stock Predictor API is ready!")
+        logger.info("=" * 70)
         
-    except FileNotFoundError as e:
-        print(f"✗ Error: Could not find OpenAI-Key.txt file")
-        print(f"  Please ensure OpenAI-Key.txt exists in the project root")
+    except FileNotFoundError:
+        logger.exception("Could not find OpenAI-Key.txt in the project root")
         raise
     except Exception as e:
-        print(f"✗ Error during startup: {str(e)}")
+        logger.exception("Error during startup: %s", str(e))
         raise
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    print("Shutting down Stock Predictor API...")
+    logger.info("Shutting down Stock Predictor API...")
 
 
 # Include routers
@@ -100,6 +105,8 @@ app.include_router(correlation_router.router, prefix="/api/v1/correlation", tags
 app.include_router(fundamental_router.router, prefix="/api/v1/fundamental", tags=["Fundamental"])
 app.include_router(memory_router.router, prefix="/api/v1/memory", tags=["Memory"])
 app.include_router(explain_router.router, prefix="/api/v1/explain", tags=["Explain"])
+app.include_router(qna_router.router, prefix="/api/v1/qna", tags=["QnA & Summarization"])
+app.include_router(swot_router.router, prefix="/api/v1/swot", tags=["SWOT Analysis"])
 
 
 @app.get("/")
@@ -124,6 +131,7 @@ async def health_check():
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
+    logger.exception("Unhandled exception at path %s", getattr(request, "url", "unknown"))
     return JSONResponse(
         status_code=500,
         content={
