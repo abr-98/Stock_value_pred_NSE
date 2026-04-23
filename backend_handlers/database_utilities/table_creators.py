@@ -12,35 +12,38 @@ def create():
 
     try:
         cur.execute("""
-                    CREATE TABLE IF NOT EXISTS news (
+                    CREATE TABLE IF NOT EXISTS news_2 (
                         id SERIAL PRIMARY KEY,
                         company VARCHAR(255),
                         title TEXT,
                         url TEXT,
                         year INT,
                         month INT,
-                        day INT
+                        day INT,
+                        UNIQUE(title, url)
                     )
                     """)
 
         cur.execute("""
-                    CREATE TABLE IF NOT EXISTS transcripts_2 (
+                    CREATE TABLE IF NOT EXISTS transcripts_3 (
                         id SERIAL PRIMARY KEY,
                         company VARCHAR(255),
                         title TEXT,
                         url TEXT,
                         filepath TEXT,
-                        date DATE
+                        date DATE,
+                        UNIQUE(title, url)
                     )
                     """)
 
 
         cur.execute("""
-                    CREATE TABLE IF NOT EXISTS top_gainers (
+                    CREATE TABLE IF NOT EXISTS top_gainers_2 (
                         sector VARCHAR(255),
                         company VARCHAR(255),
                         pCHANGE FLOAT,
-                        date DATE
+                        date DATE,
+                        UNIQUE(sector, company, date)
                     )
                     """)
         

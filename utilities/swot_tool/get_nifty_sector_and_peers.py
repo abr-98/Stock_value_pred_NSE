@@ -1,5 +1,5 @@
 import yfinance as yf
-from index_maps import *
+from .index_maps import *
 
 
 def get_nifty_sector_and_peers(ticker):

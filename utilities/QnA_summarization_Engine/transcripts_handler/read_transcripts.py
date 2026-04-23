@@ -4,7 +4,7 @@ def read_transcripts_from_database(company_slug):
 
     query = f"""
     SELECT *
-    FROM transcripts_2
+    FROM transcripts_3
     WHERE filepath = '{company_slug}'
     ORDER BY date DESC
     LIMIT 4

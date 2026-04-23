@@ -12,6 +12,6 @@ def feed_gainers():
     print(gainers_df.head())
 
     # 3. Insert into database
-    insert_dataframe(gainers_df, "top_gainers")
+    insert_dataframe(gainers_df, "top_gainers_2")
 
     

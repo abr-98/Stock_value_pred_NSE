@@ -16,9 +16,6 @@ import os
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Project root used as default workspace_root
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 @router.post(
     "/query",
@@ -39,11 +36,7 @@ async def query_transcripts(request: QnAQueryRequest):
             FetchAndAnswerTool,
         )
 
-        workspace_root = request.workspace_root or _PROJECT_ROOT
-        tool = FetchAndAnswerTool(
-            company_slug=request.company_slug,
-            workspace_root=workspace_root,
-        )
+        tool = FetchAndAnswerTool(company_slug=request.company_slug)
         tool.setup()
         raw_results = tool.answer_query(request.query)
 

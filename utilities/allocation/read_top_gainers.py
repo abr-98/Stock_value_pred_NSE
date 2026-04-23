@@ -5,5 +5,5 @@ def read_top_gainers(sector):
     date_today = datetime.datetime.now().strftime("%Y-%m-%d")
     condition = f"Sector = '{sector.replace(' ', '%20')}' AND date = '{date_today}'"
     
-    gainers_df = read_table_to_dataframe("top_gainers", condition)
+    gainers_df = read_table_to_dataframe("top_gainers_2", condition)
     return gainers_df
