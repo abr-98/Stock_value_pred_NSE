@@ -81,9 +81,9 @@ This project now includes an MCP server that exposes the same analysis capabilit
 pip install -r requirements.txt
 ```
 
-2. Start MCP server (stdio transport):
+2. Start an agent-scoped MCP server (stdio transport):
 ```bash
-python apis/start_mcp_server.py
+python apis/start_mcp_server.py stock_aggregator
 ```
 
 You can also run directly:
@@ -91,29 +91,55 @@ You can also run directly:
 python apis/mcp_server.py
 ```
 
-### Available MCP Tools
+### MCP Profiles
 
-- `health_check`
-- `analyze_stock(symbol)`
-- `analyze_portfolio(portfolio, value)`
-- `get_allocation(portfolio=None, value=None)`
-- `analyze_correlation(symbol)`
-- `get_fundamental_report(symbol)`
-- `analyze_memory(symbol)`
-- `analyze_explain(symbol)`
+Each MCP server instance should be bound to a specific agent profile so tools are not exposed globally.
+
+- `stock_aggregator`: `health_check`, `analyze_stock`
+- `allocation_agent`: `health_check`, `get_allocation`
+- `portfolio_agent`: `health_check`, `analyze_portfolio`
+- `portfolio_analysis_agent`: `health_check`, `analyze_portfolio`
+- `diversification_agent`: `health_check`, `analyze_portfolio`
+- `correlation_agent`: `health_check`, `analyze_correlation`
+- `fundamental_documents_agent`: `health_check`, `get_fundamental_report`, `query_transcripts`, `get_company_news`, `swot_analysis`
+- `memory_agent`: `health_check`, `analyze_memory`
+- `explain_agent`: `health_check`, `analyze_explain`
+- `qna_agent`: `health_check`, `query_transcripts`, `get_company_news`
+- `swot_agent`: `health_check`, `swot_analysis`
+- `all`: all tools, for local development only
 
 ### Example MCP Client Config (stdio)
+
+Register separate MCP servers per agent/profile:
 
 ```json
 {
   "mcpServers": {
-    "stock-predictor": {
+    "stock-predictor-stock": {
       "command": "python",
-      "args": ["apis/start_mcp_server.py"],
+      "args": ["apis/start_mcp_server.py", "stock_aggregator"],
+      "cwd": "D:/personal/Stock_value_pred_NSE"
+    },
+    "stock-predictor-fundamental-docs": {
+      "command": "python",
+      "args": ["apis/start_mcp_server.py", "fundamental_documents_agent"],
+      "cwd": "D:/personal/Stock_value_pred_NSE"
+    },
+    "stock-predictor-memory": {
+      "command": "python",
+      "args": ["apis/start_mcp_server.py", "memory_agent"],
       "cwd": "D:/personal/Stock_value_pred_NSE"
     }
   }
 }
+```
+
+### Legacy All-Tools Mode
+
+If you still need the old behavior for local debugging, run:
+
+```bash
+python apis/start_mcp_server.py all
 ```
 
 ## API Endpoints

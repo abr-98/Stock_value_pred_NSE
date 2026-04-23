@@ -6,9 +6,8 @@ from __future__ import annotations
 import os
 import sys
 import threading
-import importlib
-import logging
 from typing import Any, Dict, Optional
+from fastmcp import FastMCP
 
 # Add project root to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,25 +57,14 @@ class RuntimeContext:
 
 runtime = RuntimeContext()
 
+DEFAULT_MCP_PROFILE = "all"
+ACTIVE_MCP_PROFILE = os.environ.get("MCP_AGENT_PROFILE", DEFAULT_MCP_PROFILE)
+
 
 def _create_mcp() -> Any:
-    try:
-        fastmcp_module = importlib.import_module("fastmcp")
-    except ModuleNotFoundError as exc:
-        raise RuntimeError(
-            "Missing dependency 'fastmcp'. Install it with: pip install fastmcp"
-        ) from exc
-
-    return fastmcp_module.FastMCP(name="stock-predictor-tools")
+    return FastMCP(name="stock-predictor-tools")
 
 
-mcp = _create_mcp()
-
-
-@mcp.tool(
-    name="health_check",
-    description="Check whether the Stock Predictor MCP server is healthy and initialized.",
-)
 def health_check() -> Dict[str, str]:
     runtime.ensure_initialized()
     logger.info("MCP health check successful")
@@ -86,10 +74,6 @@ def health_check() -> Dict[str, str]:
     }
 
 
-@mcp.tool(
-    name="analyze_stock",
-    description="Perform comprehensive stock analysis (technical, fundamental, sentiment, regime, risk).",
-)
 def analyze_stock(symbol: str) -> Dict[str, Any]:
     logger.info("MCP analyze_stock started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
@@ -105,10 +89,6 @@ def analyze_stock(symbol: str) -> Dict[str, Any]:
     }
 
 
-@mcp.tool(
-    name="analyze_portfolio",
-    description="Analyze a portfolio and return portfolio + diversification analysis.",
-)
 def analyze_portfolio(portfolio: Dict[str, Any], value: float) -> Dict[str, Any]:
     logger.info("MCP analyze_portfolio started with holdings=%d value=%s", len(portfolio), value)
     agents = runtime.ensure_initialized()
@@ -124,10 +104,6 @@ def analyze_portfolio(portfolio: Dict[str, Any], value: float) -> Dict[str, Any]
     }
 
 
-@mcp.tool(
-    name="get_allocation",
-    description="Generate allocation recommendations from current market conditions and optional portfolio.",
-)
 def get_allocation(
     portfolio: Optional[Dict[str, int]] = None,
     value: Optional[float] = None,
@@ -148,10 +124,6 @@ def get_allocation(
     }
 
 
-@mcp.tool(
-    name="analyze_correlation",
-    description="Analyze stock correlation patterns for a symbol.",
-)
 def analyze_correlation(symbol: str) -> Dict[str, Any]:
     logger.info("MCP analyze_correlation started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
@@ -167,10 +139,6 @@ def analyze_correlation(symbol: str) -> Dict[str, Any]:
     }
 
 
-@mcp.tool(
-    name="get_fundamental_report",
-    description="Generate a comprehensive fundamental report for a symbol.",
-)
 def get_fundamental_report(symbol: str) -> Dict[str, Any]:
     logger.info("MCP get_fundamental_report started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
@@ -185,10 +153,6 @@ def get_fundamental_report(symbol: str) -> Dict[str, Any]:
     }
 
 
-@mcp.tool(
-    name="analyze_memory",
-    description="Run memory-pattern analysis for a stock symbol.",
-)
 def analyze_memory(symbol: str) -> Dict[str, Any]:
     logger.info("MCP analyze_memory started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
@@ -203,10 +167,6 @@ def analyze_memory(symbol: str) -> Dict[str, Any]:
     }
 
 
-@mcp.tool(
-    name="analyze_explain",
-    description="Run explainability analysis for a stock symbol.",
-)
 def analyze_explain(symbol: str) -> Dict[str, Any]:
     logger.info("MCP analyze_explain started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
@@ -221,14 +181,6 @@ def analyze_explain(symbol: str) -> Dict[str, Any]:
     }
 
 
-@mcp.tool(
-    name="query_transcripts",
-    description=(
-        "Answer a natural-language question using corporate annual-report PDFs and "
-        "earnings-call transcripts for a given company. "
-        "Builds a vector store from downloaded documents and returns the most relevant chunks."
-    ),
-)
 def query_transcripts(
     company_slug: str,
     query: str,
@@ -261,10 +213,6 @@ def query_transcripts(
     }
 
 
-@mcp.tool(
-    name="get_company_news",
-    description="Fetch recent news articles (last 3 days) for a given company slug/ticker.",
-)
 def get_company_news(company_slug: str) -> Dict[str, Any]:
     from utilities.QnA_summarization_Engine.news.read_news import read_news_from_database
 
@@ -280,13 +228,6 @@ def get_company_news(company_slug: str) -> Dict[str, Any]:
     }
 
 
-@mcp.tool(
-    name="swot_analysis",
-    description=(
-        "Perform absolute and peer-relative SWOT analysis for an NSE-listed stock ticker. "
-        "Returns strengths, weaknesses, opportunities, and threats derived from fundamental metrics."
-    ),
-)
 def swot_analysis(ticker: str) -> Dict[str, Any]:
     from utilities.swot_tool.swot_analysis_final import swot_analysis_final
 
@@ -301,6 +242,107 @@ def swot_analysis(ticker: str) -> Dict[str, Any]:
     }
 
 
+TOOL_SPECS = {
+    "health_check": {
+        "description": "Check whether the Stock Predictor MCP server is healthy and initialized.",
+        "handler": health_check,
+    },
+    "analyze_stock": {
+        "description": "Perform comprehensive stock analysis (technical, fundamental, sentiment, regime, risk).",
+        "handler": analyze_stock,
+    },
+    "analyze_portfolio": {
+        "description": "Analyze a portfolio and return portfolio + diversification analysis.",
+        "handler": analyze_portfolio,
+    },
+    "get_allocation": {
+        "description": "Generate allocation recommendations from current market conditions and optional portfolio.",
+        "handler": get_allocation,
+    },
+    "analyze_correlation": {
+        "description": "Analyze stock correlation patterns for a symbol.",
+        "handler": analyze_correlation,
+    },
+    "get_fundamental_report": {
+        "description": "Generate a comprehensive fundamental report for a symbol.",
+        "handler": get_fundamental_report,
+    },
+    "analyze_memory": {
+        "description": "Run memory-pattern analysis for a stock symbol.",
+        "handler": analyze_memory,
+    },
+    "analyze_explain": {
+        "description": "Run explainability analysis for a stock symbol.",
+        "handler": analyze_explain,
+    },
+    "query_transcripts": {
+        "description": (
+            "Answer a natural-language question using corporate annual-report PDFs and "
+            "earnings-call transcripts for a given company. Builds a vector store from "
+            "downloaded documents and returns the most relevant chunks."
+        ),
+        "handler": query_transcripts,
+    },
+    "get_company_news": {
+        "description": "Fetch recent news articles (last 3 days) for a given company slug/ticker.",
+        "handler": get_company_news,
+    },
+    "swot_analysis": {
+        "description": (
+            "Perform absolute and peer-relative SWOT analysis for an NSE-listed stock ticker. "
+            "Returns strengths, weaknesses, opportunities, and threats derived from fundamental metrics."
+        ),
+        "handler": swot_analysis,
+    },
+}
+
+
+PROFILE_TOOLS = {
+    "all": list(TOOL_SPECS.keys()),
+    "stock_aggregator": ["health_check", "analyze_stock"],
+    "allocation_agent": ["health_check", "get_allocation"],
+    "portfolio_agent": ["health_check", "analyze_portfolio"],
+    "portfolio_analysis_agent": ["health_check", "analyze_portfolio"],
+    "diversification_agent": ["health_check", "analyze_portfolio"],
+    "correlation_agent": ["health_check", "analyze_correlation"],
+    "fundamental_documents_agent": [
+        "health_check",
+        "get_fundamental_report",
+        "query_transcripts",
+        "get_company_news",
+        "swot_analysis",
+    ],
+    "memory_agent": ["health_check", "analyze_memory"],
+    "explain_agent": ["health_check", "analyze_explain"],
+    "qna_agent": ["health_check", "query_transcripts", "get_company_news"],
+    "swot_agent": ["health_check", "swot_analysis"],
+}
+
+
+def get_available_profiles() -> list[str]:
+    return sorted(PROFILE_TOOLS.keys())
+
+
+def create_mcp_server(profile: str = DEFAULT_MCP_PROFILE) -> Any:
+    if profile not in PROFILE_TOOLS:
+        raise ValueError(
+            f"Unknown MCP profile '{profile}'. Available profiles: {', '.join(get_available_profiles())}"
+        )
+
+    server = _create_mcp()
+    server.name = f"stock-predictor-tools-{profile}"
+
+    for tool_name in PROFILE_TOOLS[profile]:
+        spec = TOOL_SPECS[tool_name]
+        server.tool(name=tool_name, description=spec["description"])(spec["handler"])
+
+    logger.info("Created MCP server for profile=%s with tools=%s", profile, PROFILE_TOOLS[profile])
+    return server
+
+
+mcp = create_mcp_server(ACTIVE_MCP_PROFILE)
+
+
 if __name__ == "__main__":
-    logger.info("Starting MCP server with stdio transport")
+    logger.info("Starting MCP server with stdio transport for profile=%s", ACTIVE_MCP_PROFILE)
     mcp.run(transport="stdio")
