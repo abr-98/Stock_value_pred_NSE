@@ -7,8 +7,11 @@ import sys
 # Add parent directory to path to enable imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from apis.logging_config import setup_logging
+
 if __name__ == "__main__":
     from apis.mcp_server import mcp
+    logger = setup_logging("stock-predictor-mcp-launcher")
 
     print(
         """
@@ -24,4 +27,5 @@ Press CTRL+C to stop the server.
 """
     )
 
+    logger.info("Launching MCP server with stdio transport")
     mcp.run(transport="stdio")

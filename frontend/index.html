@@ -61,7 +61,43 @@
         <button onclick="runFundamentalReport()">Fundamental Earning Report</button>
         <button onclick="runMemoryAnalysis()">Expected Return Analysis</button>
         <button onclick="runExplainAnalysis()">Market Indicator Impact Analyzer</button>
+        <button onclick="runSwotAnalysis()">SWOT Analysis</button>
       </div>
+    </div>
+  </section>
+
+  <section class="grid two-col">
+    <div class="card">
+      <h3>QnA Summarization Engine</h3>
+      <div class="field-row">
+        <label for="qna-company">Company Slug</label>
+        <input id="qna-company" placeholder="e.g. TCS.NS">
+      </div>
+      <div class="field-row">
+        <label for="qna-query">Question</label>
+        <input id="qna-query" placeholder="e.g. Summarize key management guidance from latest reports">
+      </div>
+      <div class="row-actions">
+        <button onclick="runQnAQuery()">Run QnA Query</button>
+        <button class="secondary" onclick="runQnANews()">Fetch Last 3 Days News</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>SWOT Analysis</h3>
+      <pre id="swot-result">Run SWOT analysis to view strengths, weaknesses, opportunities, and threats.</pre>
+    </div>
+  </section>
+
+  <section class="grid two-col">
+    <div class="card">
+      <h3>QnA Query Result</h3>
+      <pre id="qna-result">Run a QnA query to view transcript chunks.</pre>
+    </div>
+
+    <div class="card">
+      <h3>News Result</h3>
+      <pre id="qna-news-result">Fetch company news to view recent records.</pre>
     </div>
   </section>
 
