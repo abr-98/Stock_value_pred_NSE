@@ -8,10 +8,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from apis.logging_config import setup_logging
+from apis.logging_config import install_utility_call_tracer
 
 if __name__ == "__main__":
     from apis.mcp_server import create_mcp_server, get_available_profiles
     logger = setup_logging("stock-predictor-mcp-launcher")
+    install_utility_call_tracer("service-utility-tracer-mcp-launcher")
     profile = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("MCP_AGENT_PROFILE")
 
     if not profile:
@@ -39,6 +41,8 @@ Available profiles:
 
 Press CTRL+C to stop the server.
 """
+    ,
+    file=sys.stderr,
     )
 
     logger.info("Launching MCP server with stdio transport for profile=%s", profile)

@@ -4,10 +4,10 @@ Fundamental analysis router - handles fundamental report API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import FundamentalReportRequest, FundamentalReportResponse, ErrorResponse
 from application.engines.fundamental_report_engine import FundamentalReportEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-fundamental-router")
 
 
 @router.post(
@@ -30,6 +30,7 @@ async def get_fundamental_report(request: FundamentalReportRequest, api_request:
         FundamentalReportResponse with fundamental analysis report
     """
     try:
+        log_service_io(logger, "fundamental.report.request", inputs={"symbol": request.symbol})
         logger.info(f"Starting fundamental report generation for symbol: {request.symbol}")
         
         # Initialize and run the fundamental report engine
@@ -37,6 +38,11 @@ async def get_fundamental_report(request: FundamentalReportRequest, api_request:
         agents = api_request.app.state.agents if hasattr(api_request.app.state, 'agents') else None
         engine = FundamentalReportEngine(agents=agents)
         report = engine.run(request.symbol)
+        log_service_io(
+            logger,
+            "fundamental.report.response",
+            outputs={"symbol": request.symbol, "report_keys": list(report.keys()) if isinstance(report, dict) else []},
+        )
         
         logger.info(f"Successfully generated fundamental report for symbol: {request.symbol}")
         

@@ -10,7 +10,7 @@ def get_company_earning_analysis(symbol):
     symbol = symbol.upper().replace(".NS", "")
     annual_report_url = get_annual_reports_feed(symbol)
     path = download_pdf(annual_report_url, f"{symbol}.pdf")
-    print(path)
+    print(path, file=__import__('sys').stderr)
     pages = extract_pdf_text(path)
     documents = build_chunks(pages, company=symbol, year=datetime.now().year)
     vectordb = build_vector_store(documents)

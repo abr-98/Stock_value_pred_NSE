@@ -10,11 +10,10 @@ from apis.models.schemas import (
     NewsResponse,
     ErrorResponse,
 )
-import logging
-import os
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-qna-router")
 
 
 @router.post(
@@ -30,6 +29,11 @@ logger = logging.getLogger(__name__)
 )
 async def query_transcripts(request: QnAQueryRequest):
     try:
+        log_service_io(
+            logger,
+            "qna.query.request",
+            inputs={"company_slug": request.company_slug, "query": request.query},
+        )
         logger.info(f"QnA query for '{request.company_slug}': {request.query}")
 
         from utilities.QnA_summarization_Engine.transcripts_handler.fetch_and_answer_tool import (
@@ -53,6 +57,11 @@ async def query_transcripts(request: QnAQueryRequest):
         logger.info(
             f"QnA query completed for '{request.company_slug}', {len(results)} chunks returned"
         )
+        log_service_io(
+            logger,
+            "qna.query.response",
+            outputs={"company_slug": request.company_slug, "chunk_count": len(results)},
+        )
         return QnAQueryResponse(
             status="success",
             company_slug=request.company_slug,
@@ -74,6 +83,7 @@ async def query_transcripts(request: QnAQueryRequest):
 )
 async def get_news(request: NewsRequest):
     try:
+        log_service_io(logger, "qna.news.request", inputs={"company_slug": request.company_slug})
         logger.info(f"Fetching news for '{request.company_slug}'")
 
         from utilities.QnA_summarization_Engine.news.read_news import read_news_from_database
@@ -86,6 +96,11 @@ async def get_news(request: NewsRequest):
         )
 
         logger.info(f"News fetch completed for '{request.company_slug}', {len(news_records)} records")
+        log_service_io(
+            logger,
+            "qna.news.response",
+            outputs={"company_slug": request.company_slug, "record_count": len(news_records)},
+        )
         return NewsResponse(
             status="success",
             company_slug=request.company_slug,

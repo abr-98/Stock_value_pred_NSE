@@ -4,10 +4,10 @@ Memory analysis router - handles memory analysis API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import MemoryAnalysisRequest, MemoryAnalysisResponse, ErrorResponse
 from application.engines.memory_data_engine import MemoryDataEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-memory-router")
 
 
 @router.post(
@@ -30,11 +30,17 @@ async def analyze_memory(request: MemoryAnalysisRequest, api_request: Request):
         MemoryAnalysisResponse with memory analysis report
     """
     try:
+        log_service_io(logger, "memory.analyze.request", inputs={"symbol": request.symbol})
         logger.info(f"Starting memory analysis for symbol: {request.symbol}")
 
         agents = api_request.app.state.agents if hasattr(api_request.app.state, 'agents') else None
         engine = MemoryDataEngine(agents=agents)
         report = engine.run(request.symbol)
+        log_service_io(
+            logger,
+            "memory.analyze.response",
+            outputs={"symbol": request.symbol, "report_keys": list(report.keys()) if isinstance(report, dict) else []},
+        )
 
         logger.info(f"Successfully completed memory analysis for symbol: {request.symbol}")
 

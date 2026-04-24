@@ -14,6 +14,10 @@ from agents.MemoryAgent import MemoryAgent
 
 from environment import load_api_key
 from application.helpers.vectordb import VectorDB
+from apis.logging_config import setup_logging, log_service_io
+
+
+logger = setup_logging("service-system-initializer")
 
 class SystemInitializer:
     """
@@ -38,6 +42,7 @@ class SystemInitializer:
         
 
     def initialize_system(self):
+        log_service_io(logger, "initializer.initialize_system.request", inputs={"stage": "start"})
         load_api_key()
         VectorDB.initialize_vector_db()
 
@@ -80,9 +85,30 @@ class SystemInitializer:
         self.risk_agent = risk_agent
         self.memory_agent = memory_agent
         self.explain_agent = explain_agent
+        log_service_io(
+            logger,
+            "initializer.initialize_system.response",
+            outputs={
+                "agents_initialized": [
+                    "stock_aggregator",
+                    "regime_agent",
+                    "allocation_agent",
+                    "portfolio_agent",
+                    "diversification_agent",
+                    "correlation_agent",
+                    "fundamental_documents_agent",
+                    "technical_agent",
+                    "sentiment_agent",
+                    "fundamental_agent",
+                    "risk_agent",
+                    "memory_agent",
+                    "explain_agent",
+                ]
+            },
+        )
 
     def get_agents(self):
-        return {
+        agents = {
             "stock_aggregator": self.stock_aggregator,
             "regime_agent": self.regime_agent,
             "allocation_agent": self.allocation_agent,
@@ -100,4 +126,10 @@ class SystemInitializer:
             "explain_agent": self.explain_agent,
             "regime_stock_agent": self.regime_agent,  # Alias
         }
+        log_service_io(
+            logger,
+            "initializer.get_agents.response",
+            outputs={"agent_keys": list(agents.keys())},
+        )
+        return agents
 

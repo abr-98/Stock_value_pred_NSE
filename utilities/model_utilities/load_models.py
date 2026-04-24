@@ -1,3 +1,4 @@
+import sys
 import torch
 import os
 from utilities.model_utilities.lstm_model import ResidualLSTM
@@ -17,7 +18,7 @@ def load_models(sectors, device="cpu"):
         try:
             model_path = os.path.join(models_dir, f"best_lstm_return_model_{sector}.pt")
             if not os.path.exists(model_path):
-                print(f"Warning: Model file not found: {model_path}")
+                print(f"Warning: Model file not found: {model_path}", file=sys.stderr)
                 models[sector] = None
                 continue
                 
@@ -26,6 +27,6 @@ def load_models(sectors, device="cpu"):
             model.eval()
             models[sector] = model
         except Exception as e:
-            print(f"Error loading model for {sector}: {str(e)}")
+            print(f"Error loading model for {sector}: {str(e)}", file=sys.stderr)
             models[sector] = None
     return models

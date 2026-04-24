@@ -4,10 +4,10 @@ Explain analysis router - handles explain analysis API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import ExplainAnalysisRequest, ExplainAnalysisResponse, ErrorResponse
 from application.engines.explain_data_engine import ExplainDataEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-explain-router")
 
 
 @router.post(
@@ -30,11 +30,17 @@ async def analyze_explain(request: ExplainAnalysisRequest, api_request: Request)
         ExplainAnalysisResponse with explain analysis report
     """
     try:
+        log_service_io(logger, "explain.analyze.request", inputs={"symbol": request.symbol})
         logger.info(f"Starting explain analysis for symbol: {request.symbol}")
 
         agents = api_request.app.state.agents if hasattr(api_request.app.state, 'agents') else None
         engine = ExplainDataEngine(agents=agents)
         report = engine.run(request.symbol)
+        log_service_io(
+            logger,
+            "explain.analyze.response",
+            outputs={"symbol": request.symbol, "report_keys": list(report.keys()) if isinstance(report, dict) else []},
+        )
 
         logger.info(f"Successfully completed explain analysis for symbol: {request.symbol}")
 

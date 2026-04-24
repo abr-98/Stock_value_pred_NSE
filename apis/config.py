@@ -2,11 +2,17 @@
 API Configuration Settings
 """
 from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict
 from typing import Optional
 
 
 class Settings(BaseSettings):
     """Application settings"""
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
     
     # API Settings
     API_TITLE: str = "Stock Predictor API"
@@ -29,10 +35,7 @@ class Settings(BaseSettings):
     
     # OpenAI (if needed)
     OPENAI_API_KEY: Optional[str] = None
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    TAVILY_API_KEY: Optional[str] = None
 
 
 # Global settings instance

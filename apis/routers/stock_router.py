@@ -4,10 +4,10 @@ Stock analysis router - handles stock-related API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import StockAnalysisRequest, StockAnalysisResponse, ErrorResponse
 from application.engines.stock_data_engine import StockDataEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-stock-router")
 
 
 @router.post(
@@ -30,6 +30,7 @@ async def analyze_stock(request: StockAnalysisRequest, api_request: Request):
         StockAnalysisResponse with comprehensive analysis data
     """
     try:
+        log_service_io(logger, "stock.analyze.request", inputs={"symbol": request.symbol})
         logger.info(f"Starting stock analysis for symbol: {request.symbol}")
         
         # Initialize and run the stock data engine
@@ -39,6 +40,11 @@ async def analyze_stock(request: StockAnalysisRequest, api_request: Request):
         if agents:
             engine.agents = agents
         result = engine.run(request.symbol)
+        log_service_io(
+            logger,
+            "stock.analyze.response",
+            outputs={"symbol": request.symbol, "result_keys": list(result.keys()) if isinstance(result, dict) else []},
+        )
         
         logger.info(f"Successfully completed stock analysis for symbol: {request.symbol}")
         

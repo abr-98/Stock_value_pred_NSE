@@ -64,7 +64,7 @@ class UnifiedSectorAllocatorAgent:
                 # Get current price
                 price = info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose")
                 if price is None:
-                    print(f"Warning: Could not get price for {ticker}, skipping")
+                    print(f"Warning: Could not get price for {ticker}, skipping", file=__import__('sys').stderr)
                     continue
                 
                 # Get sector
@@ -79,7 +79,7 @@ class UnifiedSectorAllocatorAgent:
                 stock_sectors[ticker] = alloc_sector
                 
             except Exception as e:
-                print(f"Warning: Error processing {ticker}: {e}")
+                print(f"Warning: Error processing {ticker}: {e}", file=__import__('sys').stderr)
                 continue
         
         if not stock_values:

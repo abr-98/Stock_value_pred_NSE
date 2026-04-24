@@ -28,9 +28,10 @@ from apis.routers import (
 )
 from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
-from apis.logging_config import setup_logging
+from apis.logging_config import setup_logging, install_utility_call_tracer
 
 logger = setup_logging("stock-predictor-api")
+install_utility_call_tracer("service-utility-tracer-api")
 
 # Initialize FastAPI app
 app = FastAPI(

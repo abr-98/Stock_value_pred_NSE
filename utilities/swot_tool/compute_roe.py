@@ -11,5 +11,5 @@ def compute_roe(stock):
         return net_income / equity
 
     except Exception as e:
-        print("ROE error:", e)
+        print("ROE error:", e, file=__import__('sys').stderr)
         return None
