@@ -4,10 +4,10 @@ Correlation analysis router - handles correlation analysis API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import CorrelationAnalysisRequest, CorrelationAnalysisResponse, ErrorResponse
 from application.engines.correlation_data_engine import CorrelationDataEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-correlation-router")
 
 
 @router.post(
@@ -30,6 +30,7 @@ async def analyze_correlation(request: CorrelationAnalysisRequest, api_request: 
         CorrelationAnalysisResponse with correlation analysis
     """
     try:
+        log_service_io(logger, "correlation.analyze.request", inputs={"symbol": request.symbol})
         logger.info(f"Starting correlation analysis for symbol: {request.symbol}")
         
         # Initialize and run the correlation engine
@@ -37,6 +38,15 @@ async def analyze_correlation(request: CorrelationAnalysisRequest, api_request: 
         agents = api_request.app.state.agents if hasattr(api_request.app.state, 'agents') else None
         engine = CorrelationDataEngine(agents=agents)
         correlation_report, rationale = engine.run(request.symbol)
+        log_service_io(
+            logger,
+            "correlation.analyze.response",
+            outputs={
+                "symbol": request.symbol,
+                "report_keys": list(correlation_report.keys()) if isinstance(correlation_report, dict) else [],
+                "rationale_length": len(rationale) if isinstance(rationale, str) else 0,
+            },
+        )
         
         logger.info(f"Successfully completed correlation analysis for symbol: {request.symbol}")
         

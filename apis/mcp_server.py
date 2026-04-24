@@ -23,9 +23,10 @@ from application.engines.correlation_data_engine import CorrelationDataEngine
 from application.engines.fundamental_report_engine import FundamentalReportEngine
 from application.engines.memory_data_engine import MemoryDataEngine
 from application.engines.explain_data_engine import ExplainDataEngine
-from apis.logging_config import setup_logging
+from apis.logging_config import setup_logging, log_service_io, install_utility_call_tracer
 
 logger = setup_logging("stock-predictor-mcp")
+install_utility_call_tracer("service-utility-tracer-mcp")
 
 
 class RuntimeContext:
@@ -61,8 +62,8 @@ DEFAULT_MCP_PROFILE = "all"
 ACTIVE_MCP_PROFILE = os.environ.get("MCP_AGENT_PROFILE", DEFAULT_MCP_PROFILE)
 
 
-def _create_mcp() -> Any:
-    return FastMCP(name="stock-predictor-tools")
+def _create_mcp(name_particular) -> Any:
+    return FastMCP(name_particular)
 
 
 def health_check() -> Dict[str, str]:
@@ -75,11 +76,13 @@ def health_check() -> Dict[str, str]:
 
 
 def analyze_stock(symbol: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.analyze_stock.request", inputs={"symbol": symbol})
     logger.info("MCP analyze_stock started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
     engine = StockDataEngine()
     engine.agents = agents
     result = engine.run(symbol)
+    log_service_io(logger, "mcp.analyze_stock.response", outputs={"symbol": symbol, "result_keys": list(result.keys()) if isinstance(result, dict) else []})
     logger.info("MCP analyze_stock completed for symbol=%s", symbol)
 
     return {
@@ -89,11 +92,34 @@ def analyze_stock(symbol: str) -> Dict[str, Any]:
     }
 
 
-def analyze_portfolio(portfolio: Dict[str, Any], value: float) -> Dict[str, Any]:
+def analyze_portfolio(
+    portfolio: Optional[Dict[str, Any]] = None,
+    value: Optional[float] = None,
+) -> Dict[str, Any]:
+    if not portfolio or value is None:
+        return {
+            "status": "error",
+            "message": "Missing required inputs for portfolio analysis. Provide both 'portfolio' and 'value'.",
+            "expected_input_example": {
+                "portfolio": {"INFY.NS": 10, "RELIANCE.NS": 4},
+                "value": 65500,
+            },
+        }
+
+    log_service_io(
+        logger,
+        "mcp.analyze_portfolio.request",
+        inputs={"holding_count": len(portfolio), "value": value},
+    )
     logger.info("MCP analyze_portfolio started with holdings=%d value=%s", len(portfolio), value)
     agents = runtime.ensure_initialized()
     engine = PortfolioDataEngine(agents=agents)
     result = engine.run(portfolio, value)
+    log_service_io(
+        logger,
+        "mcp.analyze_portfolio.response",
+        outputs={"result_keys": list(result.keys()) if isinstance(result, dict) else []},
+    )
     logger.info("MCP analyze_portfolio completed")
 
     return {
@@ -108,6 +134,11 @@ def get_allocation(
     portfolio: Optional[Dict[str, int]] = None,
     value: Optional[float] = None,
 ) -> Dict[str, Any]:
+    log_service_io(
+        logger,
+        "mcp.get_allocation.request",
+        inputs={"holding_count": len(portfolio) if portfolio else 0, "value": value},
+    )
     logger.info(
         "MCP get_allocation started with holdings=%d value=%s",
         len(portfolio) if portfolio else 0,
@@ -116,6 +147,11 @@ def get_allocation(
     agents = runtime.ensure_initialized()
     engine = AllocationDataEngine(agents=agents)
     result = engine.run(portfolio, value)
+    log_service_io(
+        logger,
+        "mcp.get_allocation.response",
+        outputs={"result_keys": list(result.keys()) if isinstance(result, dict) else []},
+    )
     logger.info("MCP get_allocation completed")
 
     return {
@@ -125,10 +161,20 @@ def get_allocation(
 
 
 def analyze_correlation(symbol: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.analyze_correlation.request", inputs={"symbol": symbol})
     logger.info("MCP analyze_correlation started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
     engine = CorrelationDataEngine(agents=agents)
     correlation_report, rationale = engine.run(symbol)
+    log_service_io(
+        logger,
+        "mcp.analyze_correlation.response",
+        outputs={
+            "symbol": symbol,
+            "report_keys": list(correlation_report.keys()) if isinstance(correlation_report, dict) else [],
+            "rationale_length": len(rationale) if isinstance(rationale, str) else 0,
+        },
+    )
     logger.info("MCP analyze_correlation completed for symbol=%s", symbol)
 
     return {
@@ -140,10 +186,16 @@ def analyze_correlation(symbol: str) -> Dict[str, Any]:
 
 
 def get_fundamental_report(symbol: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.get_fundamental_report.request", inputs={"symbol": symbol})
     logger.info("MCP get_fundamental_report started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
     engine = FundamentalReportEngine(agents=agents)
     report = engine.run(symbol)
+    log_service_io(
+        logger,
+        "mcp.get_fundamental_report.response",
+        outputs={"symbol": symbol, "report_keys": list(report.keys()) if isinstance(report, dict) else []},
+    )
     logger.info("MCP get_fundamental_report completed for symbol=%s", symbol)
 
     return {
@@ -154,10 +206,16 @@ def get_fundamental_report(symbol: str) -> Dict[str, Any]:
 
 
 def analyze_memory(symbol: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.analyze_memory.request", inputs={"symbol": symbol})
     logger.info("MCP analyze_memory started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
     engine = MemoryDataEngine(agents=agents)
     report = engine.run(symbol)
+    log_service_io(
+        logger,
+        "mcp.analyze_memory.response",
+        outputs={"symbol": symbol, "report_keys": list(report.keys()) if isinstance(report, dict) else []},
+    )
     logger.info("MCP analyze_memory completed for symbol=%s", symbol)
 
     return {
@@ -168,10 +226,16 @@ def analyze_memory(symbol: str) -> Dict[str, Any]:
 
 
 def analyze_explain(symbol: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.analyze_explain.request", inputs={"symbol": symbol})
     logger.info("MCP analyze_explain started for symbol=%s", symbol)
     agents = runtime.ensure_initialized()
     engine = ExplainDataEngine(agents=agents)
     report = engine.run(symbol)
+    log_service_io(
+        logger,
+        "mcp.analyze_explain.response",
+        outputs={"symbol": symbol, "report_keys": list(report.keys()) if isinstance(report, dict) else []},
+    )
     logger.info("MCP analyze_explain completed for symbol=%s", symbol)
 
     return {
@@ -186,6 +250,11 @@ def query_transcripts(
     query: str,
     workspace_root: Optional[str] = None,
 ) -> Dict[str, Any]:
+    log_service_io(
+        logger,
+        "mcp.query_transcripts.request",
+        inputs={"company_slug": company_slug, "query": query, "workspace_root": workspace_root},
+    )
     import os
     from utilities.QnA_summarization_Engine.transcripts_handler.fetch_and_answer_tool import (
         FetchAndAnswerTool,
@@ -195,7 +264,7 @@ def query_transcripts(
     if workspace_root is None:
         workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    tool = FetchAndAnswerTool(company_slug=company_slug, workspace_root=workspace_root)
+    tool = FetchAndAnswerTool(company_slug=company_slug)
     tool.setup()
     raw_results = tool.answer_query(query)
 
@@ -203,6 +272,11 @@ def query_transcripts(
         {"page_content": doc.page_content, "metadata": doc.metadata}
         for doc in raw_results
     ]
+    log_service_io(
+        logger,
+        "mcp.query_transcripts.response",
+        outputs={"company_slug": company_slug, "chunk_count": len(results)},
+    )
     logger.info("MCP query_transcripts completed with %d chunks", len(results))
 
     return {
@@ -214,11 +288,17 @@ def query_transcripts(
 
 
 def get_company_news(company_slug: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.get_company_news.request", inputs={"company_slug": company_slug})
     from utilities.QnA_summarization_Engine.news.read_news import read_news_from_database
 
     logger.info("MCP get_company_news started for company_slug=%s", company_slug)
     df = read_news_from_database(company_slug)
     news_records = df.to_dict(orient="records") if df is not None and not df.empty else []
+    log_service_io(
+        logger,
+        "mcp.get_company_news.response",
+        outputs={"company_slug": company_slug, "record_count": len(news_records)},
+    )
     logger.info("MCP get_company_news completed with %d records", len(news_records))
 
     return {
@@ -229,10 +309,16 @@ def get_company_news(company_slug: str) -> Dict[str, Any]:
 
 
 def swot_analysis(ticker: str) -> Dict[str, Any]:
+    log_service_io(logger, "mcp.swot_analysis.request", inputs={"ticker": ticker})
     from utilities.swot_tool.swot_analysis_final import swot_analysis_final
 
     logger.info("MCP swot_analysis started for ticker=%s", ticker)
     result = swot_analysis_final(ticker)
+    log_service_io(
+        logger,
+        "mcp.swot_analysis.response",
+        outputs={"ticker": ticker, "swot_keys": list(result.keys()) if isinstance(result, dict) else []},
+    )
     logger.info("MCP swot_analysis completed for ticker=%s", ticker)
 
     return {
@@ -329,8 +415,8 @@ def create_mcp_server(profile: str = DEFAULT_MCP_PROFILE) -> Any:
             f"Unknown MCP profile '{profile}'. Available profiles: {', '.join(get_available_profiles())}"
         )
 
-    server = _create_mcp()
-    server.name = f"stock-predictor-tools-{profile}"
+    name_particular = f"stock-predictor-tools-{profile}"
+    server = _create_mcp(name_particular)
 
     for tool_name in PROFILE_TOOLS[profile]:
         spec = TOOL_SPECS[tool_name]

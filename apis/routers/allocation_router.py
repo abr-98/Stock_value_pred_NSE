@@ -4,10 +4,10 @@ Allocation router - handles asset allocation API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import AllocationRequest, AllocationResponse, ErrorResponse
 from application.engines.allocation_data_engine import StockDataEngine  # Note: This should be renamed to AllocationDataEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-allocation-router")
 
 
 @router.post(
@@ -32,6 +32,11 @@ async def get_allocation(request: AllocationRequest, api_request: Request):
         AllocationResponse with allocation recommendations
     """
     try:
+        log_service_io(
+            logger,
+            "allocation.analyze.request",
+            inputs={"holding_count": len(request.portfolio) if request.portfolio else 0, "value": request.value},
+        )
         portfolio_info = f"with portfolio ({len(request.portfolio)} holdings)" if request.portfolio else "without existing portfolio"
         logger.info(f"Starting allocation analysis {portfolio_info}")
         
@@ -40,6 +45,11 @@ async def get_allocation(request: AllocationRequest, api_request: Request):
         agents = api_request.app.state.agents if hasattr(api_request.app.state, 'agents') else None
         engine = StockDataEngine(agents=agents)  # Note: This class should be renamed to AllocationDataEngine
         result = engine.run(request.portfolio, request.value)
+        log_service_io(
+            logger,
+            "allocation.analyze.response",
+            outputs={"result_keys": list(result.keys()) if isinstance(result, dict) else []},
+        )
         
         logger.info("Successfully completed allocation analysis")
         
