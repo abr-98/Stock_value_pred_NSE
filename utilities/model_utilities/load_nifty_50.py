@@ -1,3 +1,4 @@
+import sys
 import torch
 import os
 from utilities.model_utilities.lstm_model import ResidualLSTM
@@ -14,7 +15,7 @@ def load_nifty_50(models):
     
     try:
         if not os.path.exists(model_path):
-            print(f"Warning: NIFTY 50 model file not found: {model_path}")
+            print(f"Warning: NIFTY 50 model file not found: {model_path}", file=sys.stderr)
             models["NIFTY 50"] = None
             return models
             
@@ -22,7 +23,7 @@ def load_nifty_50(models):
         model_nifty_50.eval()
         models["NIFTY 50"] = model_nifty_50
     except Exception as e:
-        print(f"Error loading NIFTY 50 model: {str(e)}")
+        print(f"Error loading NIFTY 50 model: {str(e)}", file=sys.stderr)
         models["NIFTY 50"] = None
 
     return models

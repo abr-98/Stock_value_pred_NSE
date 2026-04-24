@@ -8,11 +8,13 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from apis.logging_config import setup_logging
+from apis.logging_config import install_utility_call_tracer
 
 if __name__ == "__main__":
     import uvicorn
     from apis.config import settings
     logger = setup_logging("stock-predictor-api-launcher")
+    install_utility_call_tracer("service-utility-tracer-api-launcher")
     
     print(f"""
     ╔═══════════════════════════════════════════════════════╗

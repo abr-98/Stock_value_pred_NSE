@@ -3,10 +3,10 @@ SWOT Analysis router - exposes SWOT analysis endpoints
 """
 from fastapi import APIRouter, HTTPException
 from apis.models.schemas import SwotAnalysisRequest, SwotAnalysisResponse, ErrorResponse
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-swot-router")
 
 
 @router.post(
@@ -21,11 +21,17 @@ logger = logging.getLogger(__name__)
 )
 async def analyze_swot(request: SwotAnalysisRequest):
     try:
+        log_service_io(logger, "swot.analyze.request", inputs={"ticker": request.ticker})
         logger.info(f"Starting SWOT analysis for ticker: {request.ticker}")
 
         from utilities.swot_tool.swot_analysis_final import swot_analysis_final
 
         result = swot_analysis_final(request.ticker)
+        log_service_io(
+            logger,
+            "swot.analyze.response",
+            outputs={"ticker": request.ticker, "swot_keys": list(result.keys()) if isinstance(result, dict) else []},
+        )
 
         logger.info(f"SWOT analysis completed for ticker: {request.ticker}")
         return SwotAnalysisResponse(

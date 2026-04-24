@@ -4,10 +4,10 @@ Portfolio analysis router - handles portfolio-related API endpoints
 from fastapi import APIRouter, HTTPException, Request
 from apis.models.schemas import PortfolioAnalysisRequest, PortfolioAnalysisResponse, ErrorResponse
 from application.engines.portfolio_data_engine import PortfolioDataEngine
-import logging
+from apis.logging_config import setup_logging, log_service_io
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = setup_logging("service-portfolio-router")
 
 
 @router.post(
@@ -30,6 +30,11 @@ async def analyze_portfolio(request: PortfolioAnalysisRequest, api_request: Requ
         PortfolioAnalysisResponse with comprehensive portfolio analysis
     """
     try:
+        log_service_io(
+            logger,
+            "portfolio.analyze.request",
+            inputs={"holding_count": len(request.portfolio), "value": request.value},
+        )
         logger.info(f"Starting portfolio analysis for value: {request.value}")
         
         # Initialize and run the portfolio data engine
@@ -37,6 +42,11 @@ async def analyze_portfolio(request: PortfolioAnalysisRequest, api_request: Requ
         agents = api_request.app.state.agents if hasattr(api_request.app.state, 'agents') else None
         engine = PortfolioDataEngine(agents=agents)
         result = engine.run(request.portfolio, request.value)
+        log_service_io(
+            logger,
+            "portfolio.analyze.response",
+            outputs={"result_keys": list(result.keys()) if isinstance(result, dict) else []},
+        )
         
         logger.info("Successfully completed portfolio analysis")
         
