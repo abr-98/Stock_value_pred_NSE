@@ -61,8 +61,8 @@ DEFAULT_MCP_PROFILE = "all"
 ACTIVE_MCP_PROFILE = os.environ.get("MCP_AGENT_PROFILE", DEFAULT_MCP_PROFILE)
 
 
-def _create_mcp() -> Any:
-    return FastMCP(name="stock-predictor-tools")
+def _create_mcp(name_particular) -> Any:
+    return FastMCP(name_particular)
 
 
 def health_check() -> Dict[str, str]:
@@ -329,8 +329,8 @@ def create_mcp_server(profile: str = DEFAULT_MCP_PROFILE) -> Any:
             f"Unknown MCP profile '{profile}'. Available profiles: {', '.join(get_available_profiles())}"
         )
 
-    server = _create_mcp()
-    server.name = f"stock-predictor-tools-{profile}"
+    name_particular = f"stock-predictor-tools-{profile}"
+    server = _create_mcp(name_particular)
 
     for tool_name in PROFILE_TOOLS[profile]:
         spec = TOOL_SPECS[tool_name]
