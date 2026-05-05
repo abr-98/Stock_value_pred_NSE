@@ -4,17 +4,22 @@ import shutil
 import os
 
 
-def collect_documents_for_company(company_slug):
-    # Documents folder is in the same directory as this script
+def collect_documents_for_company(company_slug, force_refresh=False):
+    # Documents are stored per company so one query does not invalidate another.
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    documents_dir = os.path.join(current_dir, "documents")
-    
-    if os.path.exists(documents_dir):
-        shutil.rmtree(documents_dir)  # deletes folder recursively
-    
-    os.mkdir(documents_dir)
-    
-    # Download annual reports PDF
+    documents_root = os.path.join(current_dir, "documents")
+    documents_dir = os.path.join(documents_root, company_slug)
+    pdf_path = os.path.join(documents_dir, f"{company_slug}.pdf")
+
+    if force_refresh and os.path.exists(documents_dir):
+        shutil.rmtree(documents_dir)
+
+    os.makedirs(documents_dir, exist_ok=True)
+
+    if os.path.exists(pdf_path) and not force_refresh:
+        return documents_dir
+
     annual_reports = get_annual_reports_feed(company_slug)
-    download_pdf(annual_reports, os.path.join(documents_dir, f"{company_slug}.pdf"))
+    download_pdf(annual_reports, pdf_path)
+    return documents_dir
     

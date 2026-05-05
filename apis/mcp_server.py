@@ -249,11 +249,17 @@ def query_transcripts(
     company_slug: str,
     query: str,
     workspace_root: Optional[str] = None,
+    force_refresh: bool = False,
 ) -> Dict[str, Any]:
     log_service_io(
         logger,
         "mcp.query_transcripts.request",
-        inputs={"company_slug": company_slug, "query": query, "workspace_root": workspace_root},
+        inputs={
+            "company_slug": company_slug,
+            "query": query,
+            "workspace_root": workspace_root,
+            "force_refresh": force_refresh,
+        },
     )
     import os
     from utilities.QnA_summarization_Engine.transcripts_handler.fetch_and_answer_tool import (
@@ -265,7 +271,7 @@ def query_transcripts(
         workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     tool = FetchAndAnswerTool(company_slug=company_slug)
-    tool.setup()
+    tool.setup(force_refresh=force_refresh)
     raw_results = tool.answer_query(query)
 
     results = [

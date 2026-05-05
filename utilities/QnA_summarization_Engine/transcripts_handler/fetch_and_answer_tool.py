@@ -7,17 +7,30 @@ logger = setup_logging("service-utility-qna-fetch-answer")
 
 
 class FetchAndAnswerTool:
+    _vector_cache = {}
+
     def __init__(self, company_slug):
         self.company_slug = company_slug
         self.vectordb = None
     
-    def setup(self):
+    def setup(self, force_refresh=False):
         log_service_io(
             logger,
             "utility.qna.fetch_and_answer.setup.request",
-            inputs={"company_slug": self.company_slug},
+            inputs={"company_slug": self.company_slug, "force_refresh": force_refresh},
         )
-        self.vectordb = initiate_query_database(self.company_slug)
+
+        if not force_refresh and self.company_slug in self._vector_cache:
+            self.vectordb = self._vector_cache[self.company_slug]
+            log_service_io(
+                logger,
+                "utility.qna.fetch_and_answer.setup.cache_hit",
+                outputs={"company_slug": self.company_slug},
+            )
+            return
+
+        self.vectordb = initiate_query_database(self.company_slug, force_refresh=force_refresh)
+        self._vector_cache[self.company_slug] = self.vectordb
         log_service_io(
             logger,
             "utility.qna.fetch_and_answer.setup.response",

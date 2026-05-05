@@ -36,3 +36,4 @@ ipykernel
 pdfplumber
 psycopg2-binary
 sentence-transformers
+streamlit
