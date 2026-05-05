@@ -121,10 +121,23 @@ async def _build_graph_and_tools():
 
     load_dotenv()
 
+    # Ensure API key is loaded for MCP subprocesses
+    if not os.environ.get("OPENAI_API_KEY"):
+        try:
+            key_file = os.path.join(os.getcwd(), "OpenAI-Key.txt")
+            if os.path.exists(key_file):
+                with open(key_file) as f:
+                    api_key_value = f.readline().strip()
+                    if api_key_value:
+                        os.environ["OPENAI_API_KEY"] = api_key_value
+        except Exception:
+            pass
+
     mcp_base: dict[str, Any] = {
         "command": sys.executable,
         "transport": "stdio",
         "cwd": os.getcwd(),
+        "env": {**os.environ},  # Pass parent process environment to subprocess
     }
 
     stock_conn: dict[str, Any] = {
@@ -168,9 +181,9 @@ async def _build_graph_and_tools():
     )
 
     fundamental_conn: dict[str, Any] = {
-        "fundamental-based_analyser": {
+        "fundamental_annual_earnings-based_analyser": {
             **mcp_base,
-            "args": ["apis/start_mcp_server.py", "fundamental_documents_agent"],
+            "args": ["apis/start_mcp_server.py", "fundamental_documents_annual_earnings_agent"],
         }
     }
     fundamental_mcp_client = MultiServerMCPClient(
@@ -242,9 +255,11 @@ async def _build_graph_and_tools():
         tool_tavily,
     ]
 
+    api_key = os.environ.get("OPENAI_API_KEY")
     llm = ChatOpenAI(
         model="gpt-4o",
         temperature=0,
+        api_key=api_key,
         http_client=httpx.Client(verify=False),
     )
 
