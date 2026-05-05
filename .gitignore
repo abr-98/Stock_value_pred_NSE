@@ -158,4 +158,4 @@ documents/
 *.bin
 allfiles.txt
 fundamental_db/
-*sqlite3*
+fundamental_db/chroma.sqlite3
