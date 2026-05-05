@@ -24,11 +24,26 @@ class FundamentalRAGSystem:
                 print(f"Warning: Could not auto-load API key: {e}", file=sys.stderr)
         
         api_key = os.environ.get("OPENAI_API_KEY")
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=api_key)
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
         self.summarizer = ReportSummarizationAgent(self.llm)
         self.reasoner = FundamentalReasoningAgent(self.llm)
         self.interpreter = InterpretationAgent(self.llm)
+
+    def _dedupe_docs(self, docs):
+        unique_docs = []
+        seen = set()
+
+        for doc in docs:
+            page = doc.metadata.get("page")
+            section = doc.metadata.get("section")
+            key = (page, section, doc.page_content[:200])
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_docs.append(doc)
+
+        return unique_docs
 
     def retrieve(self, query, company, k=8):
         try:
@@ -53,16 +68,41 @@ class FundamentalRAGSystem:
                 print(f"Error retrieving documents for company: {company}", file=__import__('sys').stderr)
                 return []
 
-    def summarize_company(self, company):
-        docs_fiancial = self.retrieve("financial", company)
-        docs_growth = self.retrieve("growth", company)
-        docs_margin = self.retrieve("margin", company)
-        docs_risk = self.retrieve("risk", company)
-        docs_capital = self.retrieve("allocation", company)
-        docs_goals = self.retrieve("goals", company)
-        docs_changes = self.retrieve("changes", company)
+    def _retrieve_for_queries(self, company, queries, k_per_query=3):
+        docs = []
+        for query in queries:
+            docs.extend(self.retrieve(query, company, k=k_per_query))
+        return self._dedupe_docs(docs)
 
-        docs = docs_fiancial + docs_growth + docs_margin + docs_risk + docs_capital + docs_goals + docs_changes
+    def summarize_company(self, company):
+        business_docs = self._retrieve_for_queries(company, [
+            "business model segments services products customers markets geographies",
+            "company overview operations segment mix business overview",
+        ])
+        financial_docs = self._retrieve_for_queries(company, [
+            "revenue profit margin operating margin net profit cash flow return on capital financial performance",
+            "financial statements highlights revenue growth profitability expenses working capital",
+        ])
+        risk_docs = self._retrieve_for_queries(company, [
+            "risk factors uncertainties headwinds regulatory currency competition cybersecurity attrition",
+            "principal risks internal control litigation macroeconomic risk",
+        ])
+        capital_docs = self._retrieve_for_queries(company, [
+            "capital allocation dividend buyback capex acquisitions investments cash return to shareholders",
+            "cash flow capital expenditure dividend policy treasury acquisition investment",
+        ])
+        outlook_docs = self._retrieve_for_queries(company, [
+            "management outlook guidance strategy priorities demand pipeline future growth",
+            "chairman message ceo message management discussion outlook strategic priorities",
+        ])
+        change_docs = self._retrieve_for_queries(company, [
+            "compared with previous year increase decrease changed during the year improved declined",
+            "year over year change margin expansion contraction new initiatives restructuring",
+        ])
+
+        docs = self._dedupe_docs(
+            business_docs + financial_docs + risk_docs + capital_docs + outlook_docs + change_docs
+        )
         return self.summarizer.summarize(docs)
 
     def analyze_company(self, company):
@@ -73,4 +113,9 @@ class FundamentalRAGSystem:
     def explain_company(self, company, audience="investor"):
         summary, reasoning = self.analyze_company(company)
         explanation = self.interpreter.explain(reasoning, audience)
-        return explanation
+        return (
+            "ANNUAL REPORT SUMMARY\n"
+            f"{summary}\n\n"
+            "ANALYSIS\n"
+            f"{explanation}"
+        )

@@ -41,7 +41,15 @@ Important tool-call rule:
 For portfolio-dependent tools, always pass BOTH keys exactly as:
 {"portfolio": {"INFY.NS": 10, "RELIANCE.NS": 4}, "value": 65500}
 If either is missing, return a guided error and ask once.
+
+Transcript tool rule:
+Call query_transcripts only when the user asks a specific question about annual reports, earnings-call transcripts,
+management commentary, or asks for a document-grounded summary. For generic requests like "fundamental annual report"
+or "give me the annual report", prefer get_fundamental_annual_earnings_report and do not call query_transcripts.
 """.strip()
+
+
+FUNDAMENTAL_TOOL_NAME = "get_fundamental_annual_earnings_report"
 
 
 def _extract_nse_ticker(text: str):
@@ -53,8 +61,14 @@ def _required_tools_for_query(text: str):
     q = (text or "").lower()
     tools_needed = []
 
-    if any(k in q for k in ["fundamental", "earning", "transcript", "annual report", "company news", "news"]):
-        tools_needed.extend(["get_fundamental_report", "query_transcripts"])
+    if any(k in q for k in ["fundamental", "earning", "annual report"]):
+        tools_needed.append(FUNDAMENTAL_TOOL_NAME)
+
+    if any(k in q for k in ["company news", "news"]):
+        tools_needed.append("get_company_news")
+
+    if _should_use_transcript_query(q):
+        tools_needed.append("query_transcripts")
 
     if any(k in q for k in ["historical", "price movement", "price action", "trend", "past performance"]):
         tools_needed.extend(["analyze_memory", "analyze_stock"])
@@ -63,6 +77,35 @@ def _required_tools_for_query(text: str):
         tools_needed.append("swot_analysis")
 
     return list(dict.fromkeys(tools_needed))
+
+
+def _should_use_transcript_query(text: str) -> bool:
+    q = (text or "").lower()
+
+    transcript_terms = [
+        "transcript",
+        "earnings call",
+        "conference call",
+        "management commentary",
+        "q&a",
+        "qa",
+        "from the annual report",
+        "from annual report",
+        "from transcript",
+    ]
+    if any(term in q for term in transcript_terms):
+        return True
+
+    annual_report_question_terms = [
+        "annual report summary",
+        "summarize annual report",
+        "summarise annual report",
+        "annual report highlights",
+        "what does the annual report",
+        "what did the annual report",
+        "according to the annual report",
+    ]
+    return any(term in q for term in annual_report_question_terms)
 
 
 def _extract_tool_calls(messages):
@@ -86,6 +129,14 @@ def _extract_tool_calls(messages):
                         called.append(fn["name"])
 
     return list(dict.fromkeys(called))
+
+
+def _extract_latest_text(messages) -> str:
+    for msg in reversed(messages or []):
+        content = getattr(msg, "content", "")
+        if str(content).strip():
+            return str(content)
+    return ""
 
 
 def _get_loop() -> asyncio.AbstractEventLoop:
@@ -254,12 +305,11 @@ async def _build_graph_and_tools():
         *swot_mcp_tools,
         tool_tavily,
     ]
+    st.session_state["tools_by_name"] = {tool.name: tool for tool in tools if hasattr(tool, "name")}
 
-    api_key = os.environ.get("OPENAI_API_KEY")
     llm = ChatOpenAI(
         model="gpt-4o",
         temperature=0,
-        api_key=api_key,
         http_client=httpx.Client(verify=False),
     )
 
@@ -305,6 +355,77 @@ def _init_state():
     if "last_called_tools" not in st.session_state:
         st.session_state["last_called_tools"] = []
 
+    if "tools_by_name" not in st.session_state:
+        st.session_state["tools_by_name"] = {}
+
+
+def _tool_args_for_name(tool_name: str, user_input: str, ticker: str | None, force_refresh_qna: bool):
+    if tool_name == FUNDAMENTAL_TOOL_NAME:
+        return {"symbol": ticker} if ticker else None
+
+    if tool_name == "analyze_memory":
+        return {"symbol": ticker} if ticker else None
+
+    if tool_name == "analyze_stock":
+        return {"symbol": ticker} if ticker else None
+
+    if tool_name == "swot_analysis":
+        return {"ticker": ticker} if ticker else None
+
+    if tool_name == "get_company_news":
+        return {"company_slug": ticker} if ticker else None
+
+    if tool_name == "query_transcripts":
+        return {
+            "company_slug": ticker,
+            "query": user_input,
+            "force_refresh": force_refresh_qna,
+        } if ticker else None
+
+    return None
+
+
+def _format_direct_tool_result(tool_name: str, payload: Any) -> str:
+    if isinstance(payload, dict):
+        if tool_name == FUNDAMENTAL_TOOL_NAME and isinstance(payload.get("report"), dict):
+            return str(payload["report"])
+        if tool_name in {"analyze_memory", "analyze_explain"} and isinstance(payload.get("report"), dict):
+            return str(payload["report"])
+        if tool_name == "analyze_stock" and isinstance(payload.get("data"), dict):
+            return str(payload["data"])
+        if tool_name == "swot_analysis" and isinstance(payload.get("swot"), dict):
+            return str(payload["swot"])
+        if tool_name == "get_company_news" and isinstance(payload.get("news"), list):
+            return str(payload["news"])
+        if tool_name == "query_transcripts" and isinstance(payload.get("results"), list):
+            return str(payload["results"])
+    return str(payload)
+
+
+def _run_direct_tools(required_tools: list[str], user_input: str, force_refresh_qna: bool):
+    ticker = st.session_state.get("last_ticker") or _extract_nse_ticker(user_input)
+    if ticker:
+        st.session_state["last_ticker"] = ticker
+
+    tools_by_name = st.session_state.get("tools_by_name", {})
+    direct_results = []
+    called_tools = []
+
+    for tool_name in required_tools:
+        tool = tools_by_name.get(tool_name)
+        if tool is None:
+            continue
+
+        tool_args = _tool_args_for_name(tool_name, user_input, ticker, force_refresh_qna)
+        if tool_args is None:
+            continue
+
+        payload = _run_async(tool.ainvoke(tool_args))
+        called_tools.append(tool_name)
+        direct_results.append(f"Tool {tool_name} output:\n{_format_direct_tool_result(tool_name, payload)}")
+
+    return direct_results, called_tools
+
 
 def _build_augmented_prompt(user_input: str, force_refresh_qna: bool):
     required_tools = _required_tools_for_query(user_input)
@@ -348,6 +469,11 @@ def _ask_graph(user_input: str, force_refresh_qna: bool):
     graph = st.session_state["graph"]
     augmented_user_input, required_tools = _build_augmented_prompt(user_input, force_refresh_qna)
 
+    direct_results, direct_called_tools = _run_direct_tools(required_tools, user_input, force_refresh_qna)
+    if direct_results:
+        direct_context = "\n\nVerified tool outputs:\n" + "\n\n".join(direct_results)
+        augmented_user_input += direct_context
+
     if st.session_state["is_first_turn"]:
         turn_messages = [
             SystemMessage(content=SYSTEM_PROMPT),
@@ -366,14 +492,11 @@ def _ask_graph(user_input: str, force_refresh_qna: bool):
 
     messages = result.get("messages", [])
     called_tools = _extract_tool_calls(messages)
+    if direct_called_tools:
+        called_tools = list(dict.fromkeys(direct_called_tools + called_tools))
     st.session_state["last_called_tools"] = called_tools
 
-    bot_text = ""
-    for msg in reversed(messages):
-        content = getattr(msg, "content", "")
-        if str(content).strip():
-            bot_text = str(content)
-            break
+    bot_text = _extract_latest_text(messages)
 
     return bot_text, required_tools, called_tools
 

@@ -5,6 +5,7 @@ from utilities.fundamental_document.extract_pdf_text import extract_pdf_text
 from utilities.fundamental_document.build_chunks import build_chunks
 from utilities.fundamental_document.build_vector_store import build_vector_store
 from utilities.fundamental_document.FundamentalRAGSystem import FundamentalRAGSystem
+import os
 import sys
 
 def get_company_earning_analysis(symbol):
@@ -23,8 +24,11 @@ def get_company_earning_analysis(symbol):
         
         documents = build_chunks(pages, company=symbol, year=datetime.now().year)
         print(f"Built {len(documents)} chunks from pages", file=sys.stderr)
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        persist_dir = os.path.join(current_dir, "..", "..", "fundamental_db", symbol)
         
-        vectordb = build_vector_store(documents)
+        vectordb = build_vector_store(documents, persist_dir=persist_dir, reset=True)
         print(f"Built vector store successfully", file=sys.stderr)
 
         system = FundamentalRAGSystem(vectordb)

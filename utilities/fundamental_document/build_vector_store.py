@@ -29,7 +29,7 @@ def _ensure_api_key():
         print(f"Warning: Could not load API key from file: {e}", file=sys.stderr)
         raise ValueError("OPENAI_API_KEY not found. Please set it in OpenAI-Key.txt or as environment variable.")
 
-def build_vector_store(documents, persist_dir="./fundamental_db"):
+def build_vector_store(documents, persist_dir="./fundamental_db", reset=False):
     _ensure_api_key()
     
     texts = [d["text"] for d in documents]
@@ -39,6 +39,11 @@ def build_vector_store(documents, persist_dir="./fundamental_db"):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-large", api_key=api_key)
 
     try:
+        os.makedirs(os.path.dirname(os.path.abspath(persist_dir)), exist_ok=True)
+
+        if reset and os.path.exists(persist_dir):
+            shutil.rmtree(persist_dir)
+
         if os.path.exists(persist_dir):
             try:
                 # Try to load existing vector store
@@ -46,8 +51,8 @@ def build_vector_store(documents, persist_dir="./fundamental_db"):
                     persist_directory=persist_dir,
                     embedding_function=embeddings
                 )
-                # Verify the database is functional by checking collection count
-                vectordb.add_texts(texts=texts, metadatas=metadatas)
+                # Verify the database is functional by querying the collection.
+                vectordb.similarity_search("financial performance", k=1)
             except Exception as e:
                 # If the existing database is corrupted, backup and recreate it
                 print(f"Existing vector store appears corrupted: {e}", file=__import__('sys').stderr)
