@@ -2,24 +2,25 @@ import os
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
-def build_vector_store(documents, persist_dir="./transcripts_db"):
-    texts = [d["text"] for d in documents]
-    metadatas = [d["metadata"] for d in documents]
+def build_vector_store(documents=None, persist_dir="./transcripts_db"):
+    os.makedirs(persist_dir, exist_ok=True)
 
     embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
-    if os.path.exists(persist_dir):
-        vectordb = Chroma(
+    if documents is None:
+        return Chroma(
             persist_directory=persist_dir,
-            embedding_function=embeddings
+            embedding_function=embeddings,
         )
-        vectordb.add_texts(texts=texts, metadatas=metadatas)
-    else:
-        vectordb = Chroma.from_texts(
-            texts=texts,
-            metadatas=metadatas,
-            embedding=embeddings,
-            persist_directory=persist_dir
-        )
+
+    texts = [d["text"] for d in documents]
+    metadatas = [d["metadata"] for d in documents]
+
+    vectordb = Chroma.from_texts(
+        texts=texts,
+        metadatas=metadatas,
+        embedding=embeddings,
+        persist_directory=persist_dir,
+    )
 
     return vectordb

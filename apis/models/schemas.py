@@ -106,6 +106,10 @@ class QnAQueryRequest(BaseModel):
     company_slug: str = Field(..., description="Company slug/ticker identifier", example="TCS.NS")
     query: str = Field(..., description="Natural language question about the company's transcripts", example="What was the revenue growth in Q3?")
     workspace_root: Optional[str] = Field(default=None, description="Optional path to workspace root; defaults to project root")
+    force_refresh: bool = Field(
+        default=False,
+        description="If true, redownload/rebuild the company transcript index before answering.",
+    )
 
 
 class QnAQueryResponse(BaseModel):
