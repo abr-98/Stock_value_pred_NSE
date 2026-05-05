@@ -1,3 +1,5 @@
+import os
+import sys
 from langchain_openai import ChatOpenAI
 from utilities.fundamental_document.ReportSummarizationAgent import ReportSummarizationAgent
 from utilities.fundamental_document.FundamentalReasoningAgent import FundamentalReasoningAgent
@@ -7,7 +9,23 @@ from utilities.fundamental_document.InterpretationAgent import InterpretationAge
 class FundamentalRAGSystem:
     def __init__(self, vectordb):
         self.vectordb = vectordb
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        
+        # Ensure API key is available
+        if not os.environ.get("OPENAI_API_KEY"):
+            try:
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(os.path.dirname(current_dir))
+                key_file = os.path.join(project_root, "OpenAI-Key.txt")
+                if os.path.exists(key_file):
+                    with open(key_file) as f:
+                        api_key_value = f.readline().strip()
+                        if api_key_value:
+                            os.environ["OPENAI_API_KEY"] = api_key_value
+            except Exception as e:
+                print(f"Warning: Could not auto-load API key: {e}", file=sys.stderr)
+        
+        api_key = os.environ.get("OPENAI_API_KEY")
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=api_key)
 
         self.summarizer = ReportSummarizationAgent(self.llm)
         self.reasoner = FundamentalReasoningAgent(self.llm)
