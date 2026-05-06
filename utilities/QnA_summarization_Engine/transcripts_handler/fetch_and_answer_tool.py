@@ -6,11 +6,15 @@ from apis.logging_config import setup_logging, log_service_io
 logger = setup_logging("service-utility-qna-fetch-answer")
 
 
+def _normalize_company_slug(company_slug):
+    return (company_slug or "").upper().replace(".NS", "").strip()
+
+
 class FetchAndAnswerTool:
     _vector_cache = {}
 
     def __init__(self, company_slug):
-        self.company_slug = company_slug
+        self.company_slug = _normalize_company_slug(company_slug)
         self.vectordb = None
     
     def setup(self, force_refresh=False):

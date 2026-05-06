@@ -5,7 +5,7 @@ def read_transcripts_from_database(company_slug):
     query = f"""
     SELECT *
     FROM transcripts_3
-    WHERE filepath = '{company_slug}'
+    WHERE filepath = '{company_slug.upper().replace('.NS', '')}.pdf'
     ORDER BY date DESC
     LIMIT 4
     """

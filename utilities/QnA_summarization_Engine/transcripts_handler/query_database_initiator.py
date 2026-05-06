@@ -11,7 +11,12 @@ from apis.logging_config import setup_logging, log_service_io
 logger = setup_logging("service-utility-qna-db-init")
 
 
+def _normalize_company_slug(company_slug):
+    return (company_slug or "").upper().replace(".NS", "").strip()
+
+
 def initiate_query_database(company_slug, force_refresh=False):
+    company_slug = _normalize_company_slug(company_slug)
     log_service_io(logger, "utility.qna.db_init.request", inputs={"company_slug": company_slug})
     current_dir = os.path.dirname(os.path.abspath(__file__))
     documents_dir = os.path.join(current_dir, "documents", company_slug)
@@ -43,7 +48,11 @@ def initiate_query_database(company_slug, force_refresh=False):
     all_documents = []
     for file in files:
         pages = extract_pdf_text(os.path.join(documents_dir, file))
-        all_documents.extend(build_chunks(pages, company_slug, datetime.now().year))
+        # Derive source tag from filename convention:
+        # "TCS.pdf"              -> annual_report
+        # "TCS_transcript_1.pdf" -> transcript
+        source = "transcript" if "_transcript_" in file else "annual_report"
+        all_documents.extend(build_chunks(pages, company_slug, datetime.now().year, source=source))
 
     vectordb = build_vector_store(all_documents, persist_dir=persist_dir)
 
