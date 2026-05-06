@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stock AI Control Center</title>
+  <title>Stock AI Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
@@ -11,24 +11,19 @@
 </head>
 <body>
   <div class="bg-grid"></div>
-  <header class="topbar">
-    <h1>Stock AI Control Center</h1>
-    <div class="api-config">
-      <label>
-        API URL
-        <input id="apiBaseUrl" type="text" placeholder="http://localhost:8000" />
-      </label>
-      <label>
-        Streamlit URL
-        <input id="streamlitUrl" type="text" placeholder="http://localhost:8501" />
-      </label>
-      <button id="saveConfigBtn">Save URLs</button>
+
+  <header class="topbar hidden" id="appTopbar">
+    <h1>Stock AI Workspace</h1>
+    <div class="topbar-actions">
+      <span id="currentUserLabel" class="muted"></span>
+      <button id="logoutBtn" class="ghost">Logout</button>
     </div>
   </header>
 
-  <main class="layout">
+  <main id="page-account" class="page page-center">
     <section class="card auth-card">
-      <h2>Account</h2>
+      <h2>Account Access</h2>
+      <p class="muted">Sign in to continue to your Streamlit-powered workspace.</p>
       <div class="tabs">
         <button class="tab-btn active" data-auth-mode="login">Login</button>
         <button class="tab-btn" data-auth-mode="register">Register</button>
@@ -42,66 +37,94 @@
         </select>
         <button id="authSubmitBtn">Login</button>
       </div>
-      <div class="inline-actions">
-        <button id="logoutBtn" class="ghost">Logout</button>
-        <button id="refreshUsageBtn" class="ghost">Refresh Usage</button>
-      </div>
-      <p id="currentUserLabel" class="muted">Not logged in</p>
-      <div id="tokenUsagePanel" class="usage-panel hidden">
-        <h3>Token Usage</h3>
-        <p>Input: <span id="usageInput">0</span></p>
-        <p>Output: <span id="usageOutput">0</span></p>
-        <p>Total: <span id="usageTotal">0</span></p>
-        <p>Cost: $<span id="usageCost">0.000000</span></p>
+    </section>
+  </main>
+
+  <main id="page-loading" class="page page-center hidden">
+    <section class="card loading-card">
+      <div class="loader"></div>
+      <h2>Loading Workspace</h2>
+      <p class="muted">Preparing your account and redirecting to Streamlit page...</p>
+    </section>
+  </main>
+
+  <main id="page-app" class="page hidden">
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-page="home">Home</button>
+      <button class="nav-btn" data-page="streamlit">Streamlit</button>
+      <button class="nav-btn" data-page="token">Token Usage</button>
+      <button class="nav-btn" data-page="watchlist">Watchlist</button>
+      <button class="nav-btn" data-page="portfolio">Portfolio</button>
+    </nav>
+
+    <section id="view-home" class="view active">
+      <div class="home-grid">
+        <article class="card nav-card" data-go="streamlit">
+          <h2>Streamlit Chat</h2>
+          <p>Open your integrated chat assistant and analysis tools.</p>
+        </article>
+        <article class="card nav-card" data-go="token">
+          <h2>Token Usage</h2>
+          <p>Review your input/output token counts and estimated cost.</p>
+        </article>
+        <article class="card nav-card" data-go="watchlist">
+          <h2>Watchlist</h2>
+          <p>Manage tickers you want to monitor for insights and alerts.</p>
+        </article>
+        <article class="card nav-card" data-go="portfolio">
+          <h2>Portfolio</h2>
+          <p>Store and maintain positions for analysis-ready workflows.</p>
+        </article>
       </div>
     </section>
 
-    <section class="card threads-card">
-      <h2>Chat Threads</h2>
-      <div class="inline-actions">
-        <input id="threadTitleInput" type="text" placeholder="Thread title" />
-        <button id="createThreadBtn">Create Thread</button>
+    <section id="view-streamlit" class="view">
+      <div class="card streamlit-card">
+        <div class="streamlit-header">
+          <h2>Integrated Streamlit</h2>
+          <button id="openStreamlitBtn" class="ghost">Open In New Tab</button>
+        </div>
+        <iframe id="streamlitFrame" title="Streamlit Chat"></iframe>
       </div>
-      <select id="threadSelect"></select>
-      <div id="messagesBox" class="messages-box"></div>
-      <div class="inline-actions">
-        <select id="messageRoleInput">
-          <option value="user">user</option>
-          <option value="assistant">assistant</option>
-          <option value="system">system</option>
-        </select>
-        <input id="messageModelInput" type="text" value="gpt-4o" />
-      </div>
-      <textarea id="messageContentInput" rows="3" placeholder="Message content..."></textarea>
-      <button id="sendMessageBtn">Send Message To Thread</button>
     </section>
 
-    <section class="card watchlist-card">
-      <h2>Watchlist</h2>
-      <div class="inline-actions">
-        <input id="watchTickerInput" type="text" placeholder="INFY.NS" />
-        <button id="addWatchBtn">Add</button>
+    <section id="view-token" class="view">
+      <div class="card">
+        <div class="section-header">
+          <h2>Token Usage</h2>
+          <button id="refreshUsageBtn" class="ghost">Refresh</button>
+        </div>
+        <div id="tokenUsagePanel" class="usage-panel">
+          <p>Input: <span id="usageInput">0</span></p>
+          <p>Output: <span id="usageOutput">0</span></p>
+          <p>Total: <span id="usageTotal">0</span></p>
+          <p>Cost: $<span id="usageCost">0.000000</span></p>
+        </div>
       </div>
-      <ul id="watchlistList" class="plain-list"></ul>
     </section>
 
-    <section class="card portfolio-card">
-      <h2>Portfolio</h2>
-      <div class="portfolio-grid">
-        <input id="portfolioTickerInput" type="text" placeholder="TCS.NS" />
-        <input id="portfolioQtyInput" type="number" step="0.01" placeholder="Quantity" />
-        <input id="portfolioAvgInput" type="number" step="0.01" placeholder="Avg Buy Price" />
-        <button id="addPortfolioBtn">Upsert Position</button>
+    <section id="view-watchlist" class="view">
+      <div class="card">
+        <h2>Watchlist</h2>
+        <div class="inline-actions">
+          <input id="watchTickerInput" type="text" placeholder="INFY.NS" />
+          <button id="addWatchBtn">Add</button>
+        </div>
+        <ul id="watchlistList" class="plain-list"></ul>
       </div>
-      <ul id="portfolioList" class="plain-list"></ul>
     </section>
 
-    <section class="card streamlit-card">
-      <div class="streamlit-header">
-        <h2>Integrated Streamlit Chat</h2>
-        <button id="openStreamlitBtn" class="ghost">Open In New Tab</button>
+    <section id="view-portfolio" class="view">
+      <div class="card">
+        <h2>Portfolio</h2>
+        <div class="portfolio-grid">
+          <input id="portfolioTickerInput" type="text" placeholder="TCS.NS" />
+          <input id="portfolioQtyInput" type="number" step="0.01" placeholder="Quantity" />
+          <input id="portfolioAvgInput" type="number" step="0.01" placeholder="Avg Buy Price" />
+          <button id="addPortfolioBtn">Upsert Position</button>
+        </div>
+        <ul id="portfolioList" class="plain-list"></ul>
       </div>
-      <iframe id="streamlitFrame" title="Streamlit Chat"></iframe>
     </section>
   </main>
 
