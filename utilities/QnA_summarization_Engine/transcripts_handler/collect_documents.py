@@ -3,10 +3,47 @@ from utilities.QnA_summarization_Engine.transcripts_handler.download_pdf import 
 import shutil
 import os
 import sys
+from pathlib import Path
 
 
 def _normalize_company_slug(company_slug):
     return (company_slug or "").upper().replace(".NS", "").strip()
+
+
+def _resolve_backend_filepath(raw_path):
+    if not raw_path:
+        return None
+
+    normalized = str(raw_path).strip().replace("\\", "/")
+    if not normalized:
+        return None
+
+    current_dir = Path(__file__).resolve().parent
+    project_root = current_dir.parents[3]
+
+    # 1) Absolute path as-is
+    p = Path(normalized)
+    if p.is_absolute() and p.exists():
+        return str(p)
+
+    # 2) Relative to project root
+    candidate = (project_root / normalized).resolve()
+    if candidate.exists():
+        return str(candidate)
+
+    # 3) Relative to backend transcript folder if DB stored '../../../transcripts/...'
+    filename = Path(normalized).name
+    backend_transcript_dir = (project_root / "backend_handlers" / "record_feeders" / "transcripts").resolve()
+    candidate = (backend_transcript_dir / filename).resolve()
+    if candidate.exists():
+        return str(candidate)
+
+    # 4) Project-level transcripts folder fallback
+    candidate = (project_root / "transcripts" / filename).resolve()
+    if candidate.exists():
+        return str(candidate)
+
+    return None
 
 
 def _download_transcripts_from_db(company_slug, documents_dir):
@@ -17,17 +54,34 @@ def _download_transcripts_from_db(company_slug, documents_dir):
     """
     try:
         from utilities.QnA_summarization_Engine.transcripts_handler.read_transcripts import read_transcripts_from_database
-        urls = read_transcripts_from_database(company_slug)
-        if not urls:
+        records = read_transcripts_from_database(company_slug)
+        if not records:
             print(f"No transcript URLs found in database for {company_slug}", file=sys.stderr)
             return 0
         saved = 0
-        for i, url in enumerate(urls, start=1):
+        for i, rec in enumerate(records, start=1):
+            url = rec.get("url") if isinstance(rec, dict) else None
+            filepath = rec.get("filepath") if isinstance(rec, dict) else None
             dest = os.path.join(documents_dir, f"{company_slug}_transcript_{i}.pdf")
             if os.path.exists(dest):
                 print(f"Transcript {i} already cached, skipping", file=sys.stderr)
                 saved += 1
                 continue
+
+            local_src = _resolve_backend_filepath(filepath)
+            if local_src:
+                try:
+                    shutil.copy2(local_src, dest)
+                    print(f"Copied transcript {i} from local DB filepath for {company_slug}", file=sys.stderr)
+                    saved += 1
+                    continue
+                except Exception as exc:
+                    print(f"Failed copying transcript {i} from {local_src}: {exc}", file=sys.stderr)
+
+            if not url:
+                print(f"Skipped transcript {i}; missing both local filepath and URL", file=sys.stderr)
+                continue
+
             try:
                 download_pdf(url, dest)
                 print(f"Downloaded transcript {i} for {company_slug}", file=sys.stderr)

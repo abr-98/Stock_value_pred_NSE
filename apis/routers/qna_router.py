@@ -44,7 +44,7 @@ async def query_transcripts(request: QnAQueryRequest):
             FetchAndAnswerTool,
         )
 
-        tool = FetchAndAnswerTool(company_slug=request.company_slug)
+        tool = FetchAndAnswerTool.get_tool(company_slug=request.company_slug)
         tool.setup(force_refresh=request.force_refresh)
         raw_results = tool.answer_query(request.query)
 
