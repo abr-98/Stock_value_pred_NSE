@@ -152,6 +152,51 @@ def _run_async(coro):
     return loop.run_until_complete(coro)
 
 
+def _find_web_tool(tools_by_name: dict[str, Any]):
+    for name, tool in (tools_by_name or {}).items():
+        lname = (name or "").lower()
+        if "tavily" in lname or ("search" in lname and "news" not in lname):
+            return tool
+    return None
+
+
+def _summarize_web_payload(payload: Any) -> str:
+    if isinstance(payload, list):
+        lines = []
+        for item in payload[:3]:
+            if isinstance(item, dict):
+                title = item.get("title") or item.get("name") or "Untitled"
+                url = item.get("url") or item.get("link") or ""
+                snippet = item.get("content") or item.get("snippet") or ""
+                lines.append(f"- {title}\n  {url}\n  {str(snippet)[:280]}")
+            else:
+                lines.append(f"- {str(item)[:320]}")
+        return "\n".join(lines)
+    if isinstance(payload, dict):
+        return str({k: payload.get(k) for k in list(payload.keys())[:6]})
+    return str(payload)
+
+
+def _web_fallback_context(user_input: str, failed_tools: list[str], tools_by_name: dict[str, Any]) -> str:
+    web_tool = _find_web_tool(tools_by_name)
+    if web_tool is None:
+        return ""
+
+    try:
+        payload = _run_async(web_tool.ainvoke({"query": user_input}))
+        summarized = _summarize_web_payload(payload)
+        if not summarized.strip():
+            return ""
+        return (
+            "\n\nFallback web context used because some tools failed ("
+            + ", ".join(failed_tools)
+            + "):\n"
+            + summarized
+        )
+    except Exception:
+        return ""
+
+
 async def _tool_calling_llm(state: State):
     react_agent = st.session_state["react_agent"]
     result = await react_agent.ainvoke({"messages": state["messages"]})
@@ -410,6 +455,7 @@ def _run_direct_tools(required_tools: list[str], user_input: str, force_refresh_
     tools_by_name = st.session_state.get("tools_by_name", {})
     direct_results = []
     called_tools = []
+    failed_tools = []
 
     for tool_name in required_tools:
         tool = tools_by_name.get(tool_name)
@@ -420,11 +466,23 @@ def _run_direct_tools(required_tools: list[str], user_input: str, force_refresh_
         if tool_args is None:
             continue
 
-        payload = _run_async(tool.ainvoke(tool_args))
-        called_tools.append(tool_name)
-        direct_results.append(f"Tool {tool_name} output:\n{_format_direct_tool_result(tool_name, payload)}")
+        try:
+            payload = _run_async(tool.ainvoke(tool_args))
+            called_tools.append(tool_name)
+            direct_results.append(f"Tool {tool_name} output:\n{_format_direct_tool_result(tool_name, payload)}")
+        except Exception as exc:
+            failed_tools.append(tool_name)
+            direct_results.append(
+                f"Tool {tool_name} failed with error: {str(exc)}. "
+                "Continue with available context and avoid stopping the response."
+            )
 
-    return direct_results, called_tools
+    if failed_tools:
+        web_context = _web_fallback_context(user_input, failed_tools, tools_by_name)
+        if web_context:
+            direct_results.append(web_context)
+
+    return direct_results, called_tools, failed_tools
 
 
 def _build_augmented_prompt(user_input: str, force_refresh_qna: bool):
@@ -469,7 +527,7 @@ def _ask_graph(user_input: str, force_refresh_qna: bool):
     graph = st.session_state["graph"]
     augmented_user_input, required_tools = _build_augmented_prompt(user_input, force_refresh_qna)
 
-    direct_results, direct_called_tools = _run_direct_tools(required_tools, user_input, force_refresh_qna)
+    direct_results, direct_called_tools, failed_tools = _run_direct_tools(required_tools, user_input, force_refresh_qna)
     if direct_results:
         direct_context = "\n\nVerified tool outputs:\n" + "\n\n".join(direct_results)
         augmented_user_input += direct_context
@@ -483,12 +541,25 @@ def _ask_graph(user_input: str, force_refresh_qna: bool):
     else:
         turn_messages = [HumanMessage(content=augmented_user_input)]
 
-    result = _run_async(
-        graph.ainvoke(
-            {"messages": turn_messages},
-            config={"configurable": {"thread_id": st.session_state["thread_id"]}},
+    try:
+        result = _run_async(
+            graph.ainvoke(
+                {"messages": turn_messages},
+                config={"configurable": {"thread_id": st.session_state["thread_id"]}},
+            )
         )
-    )
+    except Exception as exc:
+        tools_by_name = st.session_state.get("tools_by_name", {})
+        web_context = _web_fallback_context(user_input, failed_tools or ["graph_invoke"], tools_by_name)
+        fallback_text = (
+            "Some analysis tools failed during this turn, so I continued with a fallback path."
+            f"\nError summary: {str(exc)}"
+        )
+        if web_context:
+            fallback_text += "\n\n" + web_context
+        called_tools = list(dict.fromkeys(direct_called_tools + (["web_fallback"] if web_context else [])))
+        st.session_state["last_called_tools"] = called_tools
+        return fallback_text, required_tools, called_tools
 
     messages = result.get("messages", [])
     called_tools = _extract_tool_calls(messages)
