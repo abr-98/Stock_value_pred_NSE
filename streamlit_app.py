@@ -531,6 +531,55 @@ def _init_state():
         st.session_state["session_total_tokens"] = 0
 
 
+def _sync_auth_from_query_params():
+    params = st.query_params
+    token_from_query = params.get("token")
+    email_from_query = params.get("email")
+
+    if isinstance(token_from_query, list):
+        token_from_query = token_from_query[0] if token_from_query else None
+    if isinstance(email_from_query, list):
+        email_from_query = email_from_query[0] if email_from_query else None
+
+    token_from_query = (token_from_query or "").strip()
+    email_from_query = (email_from_query or "").strip()
+
+    if not token_from_query:
+        return
+
+    token_changed = token_from_query != st.session_state.get("auth_token")
+    if token_changed:
+        st.session_state["auth_token"] = token_from_query
+
+        try:
+            profile = _api_request("GET", "/api/v1/users/me", token=token_from_query)
+        except Exception as exc:
+            st.session_state["auth_token"] = None
+            st.session_state["user_profile"] = None
+            st.session_state["db_threads"] = []
+            st.session_state["db_thread_id"] = None
+            st.session_state["messages"] = []
+            st.session_state["is_first_turn"] = True
+            st.error(f"Session validation failed: {exc}")
+            st.stop()
+
+        if not isinstance(profile, dict):
+            profile = {}
+
+        if email_from_query and not profile.get("email"):
+            profile["email"] = email_from_query
+
+        st.session_state["user_profile"] = profile
+        threads = _load_db_threads()
+        if threads and not st.session_state.get("db_thread_id"):
+            _set_active_db_thread(threads[0])
+    else:
+        profile = st.session_state.get("user_profile") or {}
+        if email_from_query and not profile.get("email"):
+            profile["email"] = email_from_query
+            st.session_state["user_profile"] = profile
+
+
 def _tool_args_for_name(tool_name: str, user_input: str, ticker: str | None, force_refresh_qna: bool):
     if tool_name == FUNDAMENTAL_TOOL_NAME:
         return {"symbol": ticker} if ticker else None
@@ -705,83 +754,52 @@ def main():
     st.caption("Stock analysis chat thread")
 
     _init_state()
+    _sync_auth_from_query_params()
 
     with st.sidebar:
         st.subheader("Controls")
-        debug_tool_trace = st.checkbox("Show tool debug", value=True)
-        force_refresh_qna = st.checkbox("Force refresh QnA index on transcript queries", value=False)
+        force_refresh_qna = False
 
         st.markdown("---")
         st.subheader("Account")
 
         if not st.session_state.get("auth_token"):
-            auth_mode = st.radio("Auth", ["Login", "Register"], horizontal=True)
-            auth_email = st.text_input("Email", key="auth_email")
-            auth_password = st.text_input("Password", type="password", key="auth_password")
-            plan_type = "free"
-            if auth_mode == "Register":
-                plan_type = st.selectbox("Plan", ["free", "pro"], index=0)
+            st.warning("No active session found. Please login from the main web app and reopen Streamlit.")
+            st.stop()
 
-            if st.button(f"{auth_mode}"):
-                try:
-                    endpoint = "/api/v1/users/login" if auth_mode == "Login" else "/api/v1/users/register"
-                    payload = {"email": auth_email, "password": auth_password}
-                    if auth_mode == "Register":
-                        payload["plan_type"] = plan_type
-                    data = _api_request("POST", endpoint, payload=payload)
-                    st.session_state["auth_token"] = data.get("access_token")
-                    st.session_state["user_profile"] = data.get("user")
-                    _load_db_threads()
-                    st.success(f"{auth_mode} successful")
-                    st.rerun()
-                except Exception as exc:
-                    st.error(str(exc))
-        else:
-            profile = st.session_state.get("user_profile") or {}
-            st.caption(f"Logged in as {profile.get('email', 'user')}")
+        profile = st.session_state.get("user_profile") or {}
+        st.caption(f"Logged in as {profile.get('email', 'user')}")
 
-            if st.button("Refresh threads"):
-                try:
-                    _load_db_threads()
-                except Exception as exc:
-                    st.error(str(exc))
+        if st.button("Refresh threads"):
+            try:
+                _load_db_threads()
+            except Exception as exc:
+                st.error(str(exc))
 
-            if st.button("New cloud thread"):
-                try:
-                    _create_db_thread("New Chat")
-                    st.rerun()
-                except Exception as exc:
-                    st.error(str(exc))
-
-            threads = st.session_state.get("db_threads", [])
-            if threads:
-                options = {f"{t.get('title', 'Untitled')} (#{t.get('id')})": t for t in threads}
-                selected_label = st.selectbox("Cloud thread", list(options.keys()))
-                selected = options[selected_label]
-                if st.session_state.get("db_thread_id") != int(selected.get("id")):
-                    try:
-                        _set_active_db_thread(selected)
-                        st.rerun()
-                    except Exception as exc:
-                        st.error(str(exc))
-
-            if st.button("Logout"):
-                st.session_state["auth_token"] = None
-                st.session_state["user_profile"] = None
-                st.session_state["db_threads"] = []
-                st.session_state["db_thread_id"] = None
-                st.session_state["messages"] = []
-                st.session_state["is_first_turn"] = True
-                st.session_state["session_input_tokens"] = 0
-                st.session_state["session_output_tokens"] = 0
-                st.session_state["session_total_tokens"] = 0
+        if st.button("New cloud thread"):
+            try:
+                _create_db_thread("New Chat")
                 st.rerun()
+            except Exception as exc:
+                st.error(str(exc))
 
-            st.markdown("---")
-            st.subheader("Session Token Usage")
-            st.write(f"Input: {st.session_state.get('session_input_tokens', 0)}")
-            st.write(f"Output: {st.session_state.get('session_output_tokens', 0)}")
-            st.write(f"Total: {st.session_state.get('session_total_tokens', 0)}")
+        threads = st.session_state.get("db_threads", [])
+        if threads:
+            options = {f"{t.get('title', 'Untitled')} (#{t.get('id')})": t for t in threads}
+            selected_label = st.selectbox("Cloud thread", list(options.keys()))
+            selected = options[selected_label]
+            if st.session_state.get("db_thread_id") != int(selected.get("id")):
+                try:
+                    _set_active_db_thread(selected)
+                    st.rerun()
+                except Exception as exc:
+                    st.error(str(exc))
+
+        st.markdown("---")
+        st.subheader("Session Token Usage")
+        st.write(f"Input: {st.session_state.get('session_input_tokens', 0)}")
+        st.write(f"Output: {st.session_state.get('session_output_tokens', 0)}")
+        st.write(f"Total: {st.session_state.get('session_total_tokens', 0)}")
 
         if st.session_state["graph"] is None:
             st.warning("Backend not initialized yet. It will start when you send the first message.")
@@ -826,22 +844,12 @@ def main():
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                bot_text, required_tools, called_tools = _ask_graph(prompt, force_refresh_qna)
+                bot_text, _, _ = _ask_graph(prompt, force_refresh_qna)
 
             if not bot_text:
                 bot_text = "I could not generate a response. Please try again."
 
             st.markdown(bot_text)
-
-            if debug_tool_trace:
-                st.info(
-                    "required_tools="
-                    + str(required_tools)
-                    + "\n\ncalled_tools="
-                    + str(called_tools)
-                    + "\n\nforce_refresh_qna="
-                    + str(force_refresh_qna)
-                )
 
         st.session_state["messages"].append({"role": "assistant", "content": bot_text})
         _persist_message("assistant", bot_text, model="gpt-4o")

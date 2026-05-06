@@ -242,7 +242,14 @@ async function hydrateApp() {
 
   if (els.streamlitFrame) {
     const base = String(state.streamlitUrl || "http://localhost:8501").replace(/\/+$/, "");
-    els.streamlitFrame.src = `${base}/?embed=true`;
+    const params = new URLSearchParams({ embed: "true" });
+    if (state.token) {
+      params.set("token", state.token);
+    }
+    if (state.user && state.user.email) {
+      params.set("email", state.user.email);
+    }
+    els.streamlitFrame.src = `${base}/?${params.toString()}`;
   }
 
   const page = document.body.dataset.page;
@@ -289,7 +296,14 @@ function wireEvents() {
   if (els.openStreamlitBtn) {
     els.openStreamlitBtn.addEventListener("click", () => {
       const base = String(state.streamlitUrl || "http://localhost:8501").replace(/\/+$/, "");
-      window.open(`${base}/?embed=true`, "_blank", "noopener");
+      const params = new URLSearchParams({ embed: "true" });
+      if (state.token) {
+        params.set("token", state.token);
+      }
+      if (state.user && state.user.email) {
+        params.set("email", state.user.email);
+      }
+      window.open(`${base}/?${params.toString()}`, "_blank", "noopener");
     });
   }
 }
