@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock AI Control Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <header class="topbar">
+    <h1>Stock AI Control Center</h1>
+    <div class="api-config">
+      <label>
+        API URL
+        <input id="apiBaseUrl" type="text" placeholder="http://localhost:8000" />
+      </label>
+      <label>
+        Streamlit URL
+        <input id="streamlitUrl" type="text" placeholder="http://localhost:8501" />
+      </label>
+      <button id="saveConfigBtn">Save URLs</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card auth-card">
+      <h2>Account</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-auth-mode="login">Login</button>
+        <button class="tab-btn" data-auth-mode="register">Register</button>
+      </div>
+      <div class="form-grid">
+        <input id="emailInput" type="email" placeholder="Email" />
+        <input id="passwordInput" type="password" placeholder="Password" />
+        <select id="planTypeInput">
+          <option value="free">free</option>
+          <option value="pro">pro</option>
+        </select>
+        <button id="authSubmitBtn">Login</button>
+      </div>
+      <div class="inline-actions">
+        <button id="logoutBtn" class="ghost">Logout</button>
+        <button id="refreshUsageBtn" class="ghost">Refresh Usage</button>
+      </div>
+      <p id="currentUserLabel" class="muted">Not logged in</p>
+      <div id="tokenUsagePanel" class="usage-panel hidden">
+        <h3>Token Usage</h3>
+        <p>Input: <span id="usageInput">0</span></p>
+        <p>Output: <span id="usageOutput">0</span></p>
+        <p>Total: <span id="usageTotal">0</span></p>
+        <p>Cost: $<span id="usageCost">0.000000</span></p>
+      </div>
+    </section>
+
+    <section class="card threads-card">
+      <h2>Chat Threads</h2>
+      <div class="inline-actions">
+        <input id="threadTitleInput" type="text" placeholder="Thread title" />
+        <button id="createThreadBtn">Create Thread</button>
+      </div>
+      <select id="threadSelect"></select>
+      <div id="messagesBox" class="messages-box"></div>
+      <div class="inline-actions">
+        <select id="messageRoleInput">
+          <option value="user">user</option>
+          <option value="assistant">assistant</option>
+          <option value="system">system</option>
+        </select>
+        <input id="messageModelInput" type="text" value="gpt-4o" />
+      </div>
+      <textarea id="messageContentInput" rows="3" placeholder="Message content..."></textarea>
+      <button id="sendMessageBtn">Send Message To Thread</button>
+    </section>
+
+    <section class="card watchlist-card">
+      <h2>Watchlist</h2>
+      <div class="inline-actions">
+        <input id="watchTickerInput" type="text" placeholder="INFY.NS" />
+        <button id="addWatchBtn">Add</button>
+      </div>
+      <ul id="watchlistList" class="plain-list"></ul>
+    </section>
+
+    <section class="card portfolio-card">
+      <h2>Portfolio</h2>
+      <div class="portfolio-grid">
+        <input id="portfolioTickerInput" type="text" placeholder="TCS.NS" />
+        <input id="portfolioQtyInput" type="number" step="0.01" placeholder="Quantity" />
+        <input id="portfolioAvgInput" type="number" step="0.01" placeholder="Avg Buy Price" />
+        <button id="addPortfolioBtn">Upsert Position</button>
+      </div>
+      <ul id="portfolioList" class="plain-list"></ul>
+    </section>
+
+    <section class="card streamlit-card">
+      <div class="streamlit-header">
+        <h2>Integrated Streamlit Chat</h2>
+        <button id="openStreamlitBtn" class="ghost">Open In New Tab</button>
+      </div>
+      <iframe id="streamlitFrame" title="Streamlit Chat"></iframe>
+    </section>
+  </main>
+
+  <aside id="toast" class="toast hidden"></aside>
+
+  <script src="./app.js"></script>
+</body>
+</html>

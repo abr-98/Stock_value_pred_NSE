@@ -11,6 +11,7 @@ from apis.routers import (
     explain_router,
     qna_router,
     swot_router,
+    user_router,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "explain_router",
     "qna_router",
     "swot_router",
+    "user_router",
 ]
