@@ -144,3 +144,111 @@ class SwotAnalysisResponse(BaseModel):
     ticker: str = Field(..., description="Analysed stock ticker")
     swot: Dict[str, Any] = Field(..., description="SWOT analysis result with strengths, weaknesses, opportunities, and threats")
     detail: Optional[str] = Field(None, description="Detailed error information")
+
+
+# User account, chat thread, token tracking, watchlist, and portfolio models
+class UserRegisterRequest(BaseModel):
+    email: str = Field(..., description="User email")
+    password: str = Field(..., min_length=6, description="User password")
+    plan_type: Optional[str] = Field(default="free", description="Plan type")
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., description="User email")
+    password: str = Field(..., description="User password")
+
+
+class UserProfileResponse(BaseModel):
+    id: int
+    email: str
+    plan_type: str
+    token_usage: int
+    created_at: Any
+
+
+class UserAuthResponse(BaseModel):
+    status: str = "success"
+    access_token: str
+    token_type: str = "bearer"
+    user: UserProfileResponse
+
+
+class ThreadCreateRequest(BaseModel):
+    title: Optional[str] = Field(default="New Chat", description="Thread title")
+
+
+class ThreadResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    created_at: Any
+
+
+class MessageCreateRequest(BaseModel):
+    role: str = Field(..., description="user|assistant|system")
+    content: str = Field(..., description="Message content")
+    model: Optional[str] = Field(default="gpt-4o", description="LLM model name")
+    input_tokens: Optional[int] = Field(default=None, description="Optional override for input tokens")
+    output_tokens: Optional[int] = Field(default=None, description="Optional override for output tokens")
+
+
+class MessageResponse(BaseModel):
+    id: int
+    thread_id: int
+    role: str
+    content: str
+    token_count: int
+    model: str
+    created_at: Any
+
+
+class TokenUsageRecordResponse(BaseModel):
+    id: int
+    user_id: int
+    thread_id: Optional[int]
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    model: str
+    cost: float
+    timestamp: Any
+
+
+class MessageCreateResponse(BaseModel):
+    status: str = "success"
+    message: MessageResponse
+    usage: TokenUsageRecordResponse
+
+
+class TokenUsageAggregateResponse(BaseModel):
+    user_id: int
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    total_cost: float
+
+
+class WatchlistCreateRequest(BaseModel):
+    ticker: str = Field(..., description="Ticker symbol, e.g., INFY.NS")
+
+
+class WatchlistResponse(BaseModel):
+    id: int
+    user_id: int
+    ticker: str
+    added_at: Any
+
+
+class PortfolioCreateRequest(BaseModel):
+    ticker: str = Field(..., description="Ticker symbol, e.g., INFY.NS")
+    quantity: float = Field(..., gt=0, description="Position quantity")
+    avg_buy_price: float = Field(..., gt=0, description="Average buy price")
+
+
+class PortfolioResponse(BaseModel):
+    id: int
+    user_id: int
+    ticker: str
+    quantity: float
+    avg_buy_price: float
+    created_at: Any

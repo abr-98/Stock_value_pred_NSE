@@ -1,954 +1,356 @@
-let API = "http://localhost:8000";
+const state = {
+  authMode: "login",
+  token: localStorage.getItem("stockAuthToken") || "",
+  user: JSON.parse(localStorage.getItem("stockUserProfile") || "null"),
+  apiBaseUrl: window.location.origin,
+  streamlitUrl: localStorage.getItem("stockStreamlitUrl") || "http://localhost:8501",
+};
 
-function initDashboard() {
-  const savedBase = localStorage.getItem("api_base_url");
-  const apiInput = document.getElementById("api-base");
+const PAGE_LABELS = {
+  account: "Account",
+  home: "Home",
+  streamlit: "Streamlit",
+  token: "Token Usage",
+  watchlist: "Watchlist",
+  portfolio: "Portfolio",
+};
 
-  if (savedBase) {
-    API = savedBase;
-  }
+const els = {
+  appTopbar: document.getElementById("appTopbar"),
+  authTabBtns: [...document.querySelectorAll(".tab-btn")],
+  authSubmitBtn: document.getElementById("authSubmitBtn"),
+  emailInput: document.getElementById("emailInput"),
+  passwordInput: document.getElementById("passwordInput"),
+  planTypeInput: document.getElementById("planTypeInput"),
+  sessionBanner: document.getElementById("sessionBanner"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  currentUserLabel: document.getElementById("currentUserLabel"),
+  breadcrumb: document.getElementById("breadcrumb"),
+  activePageTitle: document.getElementById("activePageTitle"),
 
-  if (apiInput) {
-    apiInput.value = API;
-  }
+  accountPage: document.getElementById("accountPage"),
+  loadingPage: document.getElementById("loadingPage"),
 
-  if (document.getElementById("portfolio-body")) {
-    addRow();
-  }
-}
+  refreshUsageBtn: document.getElementById("refreshUsageBtn"),
+  usageInput: document.getElementById("usageInput"),
+  usageOutput: document.getElementById("usageOutput"),
+  usageTotal: document.getElementById("usageTotal"),
+  usageCost: document.getElementById("usageCost"),
 
-let charts = {};
+  watchTickerInput: document.getElementById("watchTickerInput"),
+  addWatchBtn: document.getElementById("addWatchBtn"),
+  watchlistList: document.getElementById("watchlistList"),
 
-function destroyChart(id) {
-  if (charts[id]) {
-    charts[id].destroy();
-    delete charts[id];
-  }
-}
+  portfolioTickerInput: document.getElementById("portfolioTickerInput"),
+  portfolioQtyInput: document.getElementById("portfolioQtyInput"),
+  portfolioAvgInput: document.getElementById("portfolioAvgInput"),
+  addPortfolioBtn: document.getElementById("addPortfolioBtn"),
+  portfolioList: document.getElementById("portfolioList"),
 
-function renderPortfolioAnalysis(data) {
+  streamlitFrame: document.getElementById("streamlitFrame"),
+  openStreamlitBtn: document.getElementById("openStreamlitBtn"),
+  toast: document.getElementById("toast"),
+};
 
-  const p = data.portfolio_analysis;
-  const d = data.diversification_analysis;
-
-  document.getElementById("portfolio-metrics").innerHTML = `
-    <div class="metric-grid">
-      <div class="metric">Avg Correlation<br><b>${p.avg_correlation.toFixed(3)}</b></div>
-      <div class="metric">Effective Bets<br><b>${p.effective_bets.toFixed(2)}</b></div>
-      <div class="metric">Risk Score<br><b>${p.risk_score}</b></div>
-      <div class="metric">Confidence<br><b>${p.confidence}</b></div>
-    </div>
-  `;
-
-  renderVarianceChart(p.variance_concentration);
-  renderRiskChart(p);
-
-  renderSectorReturns(d.sector_level.sector_returns);
-
-  renderSectorWeights(d.sector_level.weights);
-  renderSectorRisk(d.sector_level.variance_contribution);
-
-  renderRationale(data.rationale);
-}
-
-function renderVarianceChart(v) {
-
-  destroyChart("varianceChart");
-
-  charts["varianceChart"] = new Chart(document.getElementById("varianceChart"), {
-    type: "bar",
-    data: {
-      labels: ["PC1", "Top 3"],
-      datasets: [{
-        label: "Variance Share",
-        data: [v.pc1_variance, v.top3_variance]
-      }]
-    },
-    options: {
-      plugins: {
-        title: { display: true, text: "Principal Component Concentration" },
-        legend: { display: false }
-      }
-    }
-  });
-}
-
-
-function renderRiskChart(p) {
-
-  destroyChart("riskChart");
-
-  charts["riskChart"] = new Chart(document.getElementById("riskChart"), {
-    type: "bar",
-    data: {
-      labels: ["Volatility", "CVaR", "Diversification"],
-      datasets: [{
-        label: "Risk Metrics",
-        data: [p.annual_volatility, Math.abs(p.cvar), p.diversification_ratio]
-      }]
-    },
-    options: {
-      plugins: {
-        title: { display: true, text: "Portfolio Risk Structure" },
-        legend: { display: false }
-      }
-    }
-  });
-}
-
-
-function renderDiversification(data) {
-
-  const d = data.diversification_analysis;
-
-  document.getElementById("diversification-metrics").innerHTML = `
-    <div class="metric-grid">
-      <div class="metric">Effective Assets<br><b>${d.asset_level.effective_assets.toFixed(2)}</b></div>
-      <div class="metric">Effective Sectors<br><b>${d.sector_level.effective_sectors.toFixed(2)}</b></div>
-    </div>
-  `;
-
-  renderSectorWeights(d.sector_level.weights);
-  renderSectorRisk(d.sector_level.variance_contribution);
-}
-
-function renderSectorWeights(weights) {
-
-  destroyChart("sectorWeightChart");
-
-  charts["sectorWeightChart"] = new Chart(document.getElementById("sectorWeightChart"), {
-    type: "pie",
-    data: {
-      labels: Object.keys(weights),
-      datasets: [{ data: Object.values(weights) }]
-    },
-    options: {
-      plugins: { title: { display: true, text: "Sector Exposure Mix" } }
-    }
-  });
-}
-
-function renderSectorRisk(contrib) {
-
-  destroyChart("sectorRiskChart");
-
-  charts["sectorRiskChart"] = new Chart(document.getElementById("sectorRiskChart"), {
-    type: "bar",
-    data: {
-      labels: Object.keys(contrib),
-      datasets: [{ label: "Variance Contribution", data: Object.values(contrib) }]
-    },
-    options: {
-      plugins: {
-        title: { display: true, text: "Sector Risk Drivers" },
-        legend: { display: false }
-      }
-    }
-  });
-}
-
-function renderRationale(text) {
-
-  if (!text) {
-    document.getElementById("portfolio-result").innerHTML = "No rationale available.";
+function notify(message) {
+  if (!els.toast) {
     return;
   }
-
-  // Remove line breaks that break formatting
-  const cleaned = text.replace(/\n/g, " ");
-
-  const points = cleaned
-      .split("|")
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
-
-  document.getElementById("portfolio-result").innerHTML =
-      "<ul class='rationale-list'>" +
-      points.map(p => `<li>${p}</li>`).join("") +
-      "</ul>";
+  els.toast.textContent = message;
+  els.toast.classList.remove("hidden");
+  setTimeout(() => els.toast.classList.add("hidden"), 2500);
 }
 
-function renderAllocationPie(allocations) {
+async function api(path, method = "GET", body = null) {
+  const headers = { "Content-Type": "application/json" };
+  if (state.token) {
+    headers.Authorization = `Bearer ${state.token}`;
+  }
 
-  destroyChart("allocationPieChart");
-
-  charts["allocationPieChart"] = new Chart(
-    document.getElementById("allocationPieChart"),
-    {
-      type: "pie",
-      data: {
-        labels: Object.keys(allocations),
-        datasets: [{
-          data: Object.values(allocations)
-        }]
-      },
-      options: {
-        plugins: {
-          title: {
-            display: true,
-            text: "Portfolio Sector Distribution"
-          },
-          legend: {
-            position: "right"
-          }
-        }
-      }
-    }
-  );
-}
-
-function renderAllocationBar(allocations) {
-
-  destroyChart("allocationBarChart");
-
-  const sorted = Object.entries(allocations)
-    .sort((a, b) => b[1] - a[1]);
-
-  charts["allocationBarChart"] = new Chart(
-    document.getElementById("allocationBarChart"),
-    {
-      type: "bar",
-      data: {
-        labels: sorted.map(x => x[0]),
-        datasets: [{
-          label: "Allocation Weight",
-          data: sorted.map(x => x[1])
-        }]
-      },
-      options: {
-        plugins: {
-          title: {
-            display: true,
-            text: "Sector Allocation Ranking"
-          },
-          legend: { display: false }
-        }
-      }
-    }
-  );
-}
-
-
-
-
-function renderSectorReturns(sectorReturns) {
-
-  destroyChart("sectorReturnChart");
-
-  const labels = sectorReturns.map((_, i) => i + 1);
-
-  const sectors = Object.keys(sectorReturns[0]);
-
-  const datasets = sectors.map(sector => ({
-    label: sector,
-    data: sectorReturns.map(r => r[sector]),
-    fill: false
-  }));
-
-  charts["sectorReturnChart"] = new Chart(document.getElementById("sectorReturnChart"), {
-    type: "line",
-    data: { labels, datasets },
-    options: {
-      plugins: {
-        title: { display: true, text: "Sector Return Behaviour (Historical Window)" },
-        legend: { display: true }
-      },
-      elements: { point: { radius: 0 } }
-    }
+  const response = await fetch(`${state.apiBaseUrl}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
   });
-}
 
-
-
-
-function saveApiBase() {
-  const input = document.getElementById("api-base");
-  if (!input) {
-    return;
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (e) {
+    data = {};
   }
-
-  const value = input.value.trim().replace(/\/$/, "");
-  if (!value) {
-    setText("status-result", "Please provide a valid API base URL.");
-    return;
-  }
-
-  API = value;
-  localStorage.setItem("api_base_url", API);
-  setText("status-result", `API base updated to ${API}`);
-}
-
-function setText(elementId, message) {
-  const element = document.getElementById(elementId);
-  if (element) {
-    element.textContent = message;
-  }
-}
-
-function readSymbol() {
-  const element = document.getElementById("stock-symbol");
-  if (!element) {
-    return "";
-  }
-  return element.value.trim().toUpperCase();
-}
-
-function readCompanySlug() {
-  const element = document.getElementById("qna-company");
-  if (!element) {
-    return "";
-  }
-  return element.value.trim().toUpperCase();
-}
-
-function readQnAQuestion() {
-  const element = document.getElementById("qna-query");
-  if (!element) {
-    return "";
-  }
-  return element.value.trim();
-}
-
-async function apiCall(path, options = {}) {
-  const url = `${API}${path}`;
-  const response = await fetch(url, options);
-  const data = await response.json();
 
   if (!response.ok) {
-    const message = data?.detail || data?.message || `HTTP ${response.status}`;
-    throw new Error(message);
+    throw new Error(data.detail || data.message || `HTTP ${response.status}`);
   }
 
   return data;
 }
 
-function renderExplainabilityDashboard(data) {
+function setAuthMode(mode) {
+  if (!els.authSubmitBtn || !els.planTypeInput) {
+    return;
+  }
+  state.authMode = mode;
+  els.authSubmitBtn.textContent = mode === "login" ? "Login" : "Register";
+  els.planTypeInput.style.display = mode === "register" ? "block" : "none";
+  els.authTabBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.authMode === mode));
+}
 
-  const analysis = data.report.analysis;
+async function loginOrRegister() {
+  const email = els.emailInput.value.trim();
+  const password = els.passwordInput.value.trim();
+  if (!email || !password) {
+    notify("Email and password are required");
+    return;
+  }
 
-  renderLinearExplain(analysis.linear_explanation);
-  renderTreeExplain(analysis.decision_tree_explanation);
-  renderExplainRationale(data.report.rationale);
+  const path = state.authMode === "login" ? "/api/v1/users/login" : "/api/v1/users/register";
+  const payload = { email, password };
+  if (state.authMode === "register") {
+    payload.plan_type = els.planTypeInput.value;
+  }
+
+  if (els.accountPage) els.accountPage.classList.add("hidden");
+  if (els.loadingPage) els.loadingPage.classList.remove("hidden");
+  const data = await api(path, "POST", payload);
+
+  state.token = data.access_token;
+  state.user = data.user;
+
+  localStorage.setItem("stockAuthToken", state.token);
+  localStorage.setItem("stockUserProfile", JSON.stringify(state.user));
+
+  setTimeout(() => {
+    window.location.href = "/frontend/streamlit.html";
+  }, 450);
+  notify(`${state.authMode} successful`);
+}
+
+function logout() {
+  state.token = "";
+  state.user = null;
+  localStorage.removeItem("stockAuthToken");
+  localStorage.removeItem("stockUserProfile");
+  window.location.href = "/frontend/index.html";
+  notify("Logged out");
 }
 
 
-function renderLinearExplain(coeffs) {
+function showSessionBannerFromQuery() {
+  if (!els.sessionBanner) {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search || "");
+  const reason = params.get("reason");
 
-  destroyChart("linearExplainChart");
+  if (reason === "session-expired") {
+    els.sessionBanner.textContent = "Your session expired. Please login again.";
+    els.sessionBanner.classList.remove("hidden");
+  } else if (reason === "unauthorized") {
+    els.sessionBanner.textContent = "Please login to continue.";
+    els.sessionBanner.classList.remove("hidden");
+  } else {
+    els.sessionBanner.classList.add("hidden");
+  }
+}
 
-  const values = Object.values(coeffs);
-  const maxAbs = Math.max(...values.map(v => Math.abs(v)));
 
-  const normalized = values.map(v => v / maxAbs);
+function setPageStrip(page) {
+  const label = PAGE_LABELS[page] || "Workspace";
+  if (els.activePageTitle) {
+    els.activePageTitle.textContent = label;
+  }
+  if (els.breadcrumb) {
+    els.breadcrumb.textContent = `Stock AI Workspace / ${label}`;
+  }
+}
 
-  charts["linearExplainChart"] = new Chart(
-    document.getElementById("linearExplainChart"),
-    {
-      type: "bar",
-      data: {
-        labels: Object.keys(coeffs),
-        datasets: [{ data: normalized }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "Relative Feature Influence (Linear Model)" }
-        },
-        scales: {
-          y: { min: -1, max: 1 }
-        }
+async function refreshUsage() {
+  const usage = await api("/api/v1/users/token-usage");
+  els.usageInput.textContent = usage.input_tokens;
+  els.usageOutput.textContent = usage.output_tokens;
+  els.usageTotal.textContent = usage.total_tokens;
+  els.usageCost.textContent = Number(usage.total_cost || 0).toFixed(6);
+}
+
+async function refreshWatchlist() {
+  const items = await api("/api/v1/users/watchlist");
+  els.watchlistList.innerHTML = "";
+  items.forEach(item => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${item.ticker}</span><button data-ticker="${item.ticker}">Remove</button>`;
+    li.querySelector("button").addEventListener("click", async () => {
+      await api(`/api/v1/users/watchlist/${encodeURIComponent(item.ticker)}`, "DELETE");
+      await refreshWatchlist();
+    });
+    els.watchlistList.appendChild(li);
+  });
+}
+
+async function addWatchlist() {
+  const ticker = els.watchTickerInput.value.trim().toUpperCase();
+  if (!ticker) {
+    notify("Ticker is required");
+    return;
+  }
+  await api("/api/v1/users/watchlist", "POST", { ticker });
+  els.watchTickerInput.value = "";
+  await refreshWatchlist();
+  notify("Watchlist updated");
+}
+
+async function refreshPortfolio() {
+  const items = await api("/api/v1/users/portfolio");
+  els.portfolioList.innerHTML = "";
+  items.forEach(item => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${item.ticker} | qty ${item.quantity} | avg ${item.avg_buy_price}</span><button data-ticker="${item.ticker}">Remove</button>`;
+    li.querySelector("button").addEventListener("click", async () => {
+      await api(`/api/v1/users/portfolio/${encodeURIComponent(item.ticker)}`, "DELETE");
+      await refreshPortfolio();
+    });
+    els.portfolioList.appendChild(li);
+  });
+}
+
+async function addPortfolio() {
+  const ticker = els.portfolioTickerInput.value.trim().toUpperCase();
+  const quantity = Number(els.portfolioQtyInput.value);
+  const avg_buy_price = Number(els.portfolioAvgInput.value);
+  if (!ticker || !quantity || !avg_buy_price) {
+    notify("Ticker, quantity and avg price are required");
+    return;
+  }
+
+  await api("/api/v1/users/portfolio", "POST", { ticker, quantity, avg_buy_price });
+  els.portfolioTickerInput.value = "";
+  els.portfolioQtyInput.value = "";
+  els.portfolioAvgInput.value = "";
+  await refreshPortfolio();
+  notify("Portfolio updated");
+}
+
+async function hydrateApp() {
+  if (els.currentUserLabel) {
+    if (state.user && state.user.email) {
+      els.currentUserLabel.textContent = `${state.user.email} (${state.user.plan_type || "free"})`;
+    } else {
+      els.currentUserLabel.textContent = "Logged in";
+    }
+  }
+
+  if (els.streamlitFrame) {
+    const base = String(state.streamlitUrl || "http://localhost:8501").replace(/\/+$/, "");
+    const params = new URLSearchParams({ embed: "true" });
+    if (state.token) {
+      params.set("token", state.token);
+    }
+    if (state.user && state.user.email) {
+      params.set("email", state.user.email);
+    }
+    els.streamlitFrame.src = `${base}/?${params.toString()}`;
+  }
+
+  const page = document.body.dataset.page;
+  if (page === "token") {
+    await refreshUsage();
+  }
+  if (page === "watchlist") {
+    await refreshWatchlist();
+  }
+  if (page === "portfolio") {
+    await refreshPortfolio();
+  }
+}
+
+function wireEvents() {
+  if (els.authTabBtns && els.authTabBtns.length) {
+    els.authTabBtns.forEach(btn => {
+      btn.addEventListener("click", () => setAuthMode(btn.dataset.authMode));
+    });
+  }
+
+  if (els.authSubmitBtn) {
+    els.authSubmitBtn.addEventListener("click", () => loginOrRegister().catch(err => {
+      if (els.loadingPage) els.loadingPage.classList.add("hidden");
+      if (els.accountPage) els.accountPage.classList.remove("hidden");
+      notify(err.message);
+    }));
+  }
+
+  if (els.logoutBtn) {
+    els.logoutBtn.addEventListener("click", logout);
+  }
+
+  if (els.refreshUsageBtn) {
+    els.refreshUsageBtn.addEventListener("click", () => refreshUsage().catch(err => notify(err.message)));
+  }
+  if (els.addWatchBtn) {
+    els.addWatchBtn.addEventListener("click", () => addWatchlist().catch(err => notify(err.message)));
+  }
+  if (els.addPortfolioBtn) {
+    els.addPortfolioBtn.addEventListener("click", () => addPortfolio().catch(err => notify(err.message)));
+  }
+
+  if (els.openStreamlitBtn) {
+    els.openStreamlitBtn.addEventListener("click", () => {
+      const base = String(state.streamlitUrl || "http://localhost:8501").replace(/\/+$/, "");
+      const params = new URLSearchParams({ embed: "true" });
+      if (state.token) {
+        params.set("token", state.token);
+      }
+      if (state.user && state.user.email) {
+        params.set("email", state.user.email);
+      }
+      window.open(`${base}/?${params.toString()}`, "_blank", "noopener");
+    });
+  }
+}
+
+async function init() {
+  const page = document.body.dataset.page || "account";
+  setPageStrip(page);
+
+  // Only initialize auth form controls on the account page.
+  if (page === "account") {
+    setAuthMode("login");
+  }
+
+  wireEvents();
+
+  if (page === "account") {
+    showSessionBannerFromQuery();
+    if (state.token) {
+      try {
+        const me = await api("/api/v1/users/me");
+        state.user = me;
+        localStorage.setItem("stockUserProfile", JSON.stringify(me));
+        window.location.href = "/frontend/home.html";
+      } catch (err) {
+        localStorage.removeItem("stockAuthToken");
+        localStorage.removeItem("stockUserProfile");
       }
     }
-  );
-}
+    return;
+  }
 
-function renderTreeExplain(importances) {
+  if (!state.token) {
+    window.location.href = "/frontend/index.html?reason=unauthorized";
+    return;
+  }
 
-  destroyChart("treeExplainChart");
-
-  const vals = importances.map(x => x.importance);
-
-  charts["treeExplainChart"] = new Chart(
-    document.getElementById("treeExplainChart"),
-    {
-      type: "bar",
-      data: {
-        labels: vals.map((_, i) => `Feature ${i + 1}`),
-        datasets: [{ data: vals }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "Decision Tree Importance Structure" }
-        },
-        scales: {
-          y: { min: 0, max: Math.max(...vals) }
-        }
-      }
-    }
-  );
-}
-
-function renderExplainRationale(text) {
-
-  const points = text.split("|").map(t => t.trim());
-
-  document.getElementById("explain-rationale").innerHTML =
-    "<ul class='rationale-list'>" +
-    points.map(p => `<li>${p}</li>`).join("") +
-    "</ul>";
-}
-
-
-
-async function runRequest(resultId, statusLabel, path, options = {}) {
   try {
-    setText("status-result", `Running ${statusLabel}...`);
-    setText(resultId, "Loading...");
-    const data = await apiCall(path, options);
-
-if (path.includes("/explain/analyze/")) {
-
-    renderExplainabilityDashboard(data);
-
-} else if (path.includes("/memory/analyze/")) {
-
-    renderMemoryDashboard(data);
-
-} else if (path.includes("/stock/analyze/")) {
-
-    renderStockDashboard(data);
-
-} else if (path.includes("/allocation/analyze")) {
-
-    const allocations = data.allocation_analysis.allocations;
-
-    renderAllocationPie(allocations);
-    renderAllocationBar(allocations);
-
-} else if (path.includes("/portfolio/analyze")) {
-
-    renderPortfolioAnalysis(data);
-    renderDiversification(data);
-
-} else {
-    setText(resultId, JSON.stringify(data, null, 2));
-}
-
-    setText("status-result", `${statusLabel} completed.`);
-  } catch (error) {
-    setText(resultId, `Error: ${error.message}`);
-    setText("status-result", `${statusLabel} failed.`);
+    const me = await api("/api/v1/users/me");
+    state.user = me;
+    localStorage.setItem("stockUserProfile", JSON.stringify(me));
+    await hydrateApp();
+  } catch (err) {
+    localStorage.removeItem("stockAuthToken");
+    localStorage.removeItem("stockUserProfile");
+    window.location.href = "/frontend/index.html?reason=session-expired";
+    notify(`Session expired: ${err.message}`);
   }
 }
 
-async function checkHealth() {
-  await runRequest("health-result", "Health check", "/health");
-}
-
-function addRow() {
-  const table = document.getElementById("portfolio-body");
-  if (!table) {
-    return;
-  }
-
-  const row = document.createElement("tr");
-
-  row.innerHTML = `
-    <td><input placeholder="Symbol" class="symbol"></td>
-    <td><input placeholder="Qty" class="qty" type="number"></td>
-    <td><button class="danger" onclick="removeRow(this)">Remove</button></td>
-  `;
-
-  table.appendChild(row);
-}
-
-function removeRow(button) {
-  const row = button.closest("tr");
-  if (row) {
-    row.remove();
-  }
-}
-
-function collectPortfolio() {
-  const symbols = document.querySelectorAll(".symbol");
-  const qtys = document.querySelectorAll(".qty");
-
-  const portfolio = {};
-
-  symbols.forEach((s, i) => {
-    const sym = s.value.trim();
-    const qty = qtys[i].value;
-
-    if (sym && qty) {
-      portfolio[sym] = Number(qty);
-    }
-  });
-
-  return portfolio;
-}
-
-async function analyzePortfolio() {
-  const portfolio = collectPortfolio();
-  const valueElement = document.getElementById("portfolio-value");
-  const value = Number(valueElement ? valueElement.value : 0);
-
-  if (!Object.keys(portfolio).length) {
-    setText("status-result", "Please add at least one stock in portfolio input.");
-    return;
-  }
-
-  if (!value || value <= 0) {
-    setText("status-result", "Please enter a valid portfolio value.");
-    return;
-  }
-
-  const payload = {
-    portfolio,
-    value
-  };
-
-  await runRequest(
-    "portfolio-result",
-    "Portfolio analysis",
-    "/api/v1/portfolio/analyze",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }
-  );
-
-  await runRequest(
-    "allocation-result",
-    "Allocation analysis",
-    "/api/v1/allocation/analyze",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }
-  );
-}
-
-function renderStockDashboard(data) {
-
-  const d = data.data;
-
-  renderStockSummary(d);
-  renderAgentScores(d.signals);
-  renderAgentConfidence(d.signals);
-  renderDiagnostics(d);
-  renderRegime(d.regime);
-  renderTechnical(d.evidence.technical);
-  renderRationale(d.structural_rationale);
-}
-
-
-function renderStockSummary(d) {
-
-  document.getElementById("stock-summary").innerHTML = `
-    <div class="summary-grid">
-      <div class="summary-box">Final Score<br><b>${d.final_score.toFixed(2)}</b></div>
-      <div class="summary-box">Confidence<br><b>${d.confidence.toFixed(2)}</b></div>
-      <div class="summary-box">Disagreement<br><b>${d.disagreement.toFixed(2)}</b></div>
-      <div class="summary-box">Regime<br><b>${d.regime.regime}</b></div>
-    </div>
-  `;
-}
-
-function renderMemoryDashboard(data) {
-
-  const a = data.report.analysis;
-  const instances = a.matched_instances;
-
-  renderMemorySummary(a);
-  renderMemoryBehaviour(a);
-  renderMemoryDistances(a.distance_stats);
-  renderMemoryReturns(instances);
-  renderMemoryRisk(instances);
-}
-
-function renderMemorySummary(a) {
-
-  document.getElementById("memory-summary").innerHTML = `
-    <div class="summary-grid">
-      <div class="summary-box">Matches<br><b>${a.matches}</b></div>
-      <div class="summary-box">Avg Forward Return<br><b>${(a.avg_forward_return * 100).toFixed(2)}%</b></div>
-      <div class="summary-box">Positive Ratio<br><b>${(a.positive_ratio * 100).toFixed(0)}%</b></div>
-    </div>
-  `;
-}
-
-function renderMemoryBehaviour(a) {
-
-  destroyChart("memoryBehaviourChart");
-
-  charts["memoryBehaviourChart"] = new Chart(
-    document.getElementById("memoryBehaviourChart"),
-    {
-      type: "bar",
-      data: {
-        labels: ["Avg Return", "Positive Probability"],
-        datasets: [{
-          data: [a.avg_forward_return, a.positive_ratio]
-        }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "Historical Forward Behaviour" }
-        },
-        scales: {
-          y: { min: 0, max: 1 }
-        }
-      }
-    }
-  );
-}
-
-function renderMemoryDistances(stats) {
-
-  destroyChart("memoryDistanceChart");
-
-  const normalized = [
-    stats.min / stats.max,
-    stats.mean / stats.max,
-    1
-  ];
-
-  charts["memoryDistanceChart"] = new Chart(
-    document.getElementById("memoryDistanceChart"),
-    {
-      type: "bar",
-      data: {
-        labels: ["Nearest", "Average", "Farthest"],
-        datasets: [{ data: normalized }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "Similarity Dispersion (Normalized)" }
-        },
-        scales: {
-          y: { min: 0, max: 1 }
-        }
-      }
-    }
-  );
-}
-
-function renderMemoryReturns(instances) {
-
-  destroyChart("memoryReturnsChart");
-
-  charts["memoryReturnsChart"] = new Chart(
-    document.getElementById("memoryReturnsChart"),
-    {
-      type: "bar",
-      data: {
-        labels: instances.map(x => x.date.slice(0, 10)),
-        datasets: [{
-          data: instances.map(x => x.features.r_20)
-        }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "20-Day Returns of Matched Regimes" }
-        }
-      }
-    }
-  );
-}
-
-function renderMemoryRisk(instances) {
-
-  destroyChart("memoryRiskChart");
-
-  charts["memoryRiskChart"] = new Chart(
-    document.getElementById("memoryRiskChart"),
-    {
-      type: "bar",
-      data: {
-        labels: instances.map(x => x.date.slice(0, 10)),
-        datasets: [{
-          data: instances.map(x => Math.abs(x.features.drawdown_20))
-        }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "Drawdown Severity of Matched Regimes" }
-        }
-      }
-    }
-  );
-}
-
-
-function renderAgentScores(signals) {
-
-  destroyChart("agentScoreChart");
-
-  charts["agentScoreChart"] = new Chart(document.getElementById("agentScoreChart"), {
-    type: "bar",
-    data: {
-      labels: signals.map(s => s.agent.toUpperCase()),
-      datasets: [{
-        data: signals.map(s => s.score)
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: "Agent Signal Strength" }
-      },
-      scales: {
-        y: {
-          min: -1,
-          max: 100    // Scores bounded visually
-        }
-      }
-    }
-  });
-}
-
-function renderAgentConfidence(signals) {
-
-  destroyChart("agentConfidenceChart");
-
-  const maxConf = Math.max(...signals.map(s => s.confidence));
-
-  const normalized = signals.map(s => s.confidence / maxConf);
-
-  charts["agentConfidenceChart"] = new Chart(document.getElementById("agentConfidenceChart"), {
-    type: "bar",
-    data: {
-      labels: signals.map(s => s.agent.toUpperCase()),
-      datasets: [{
-        data: normalized
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: "Relative Agent Confidence" }
-      },
-      scales: {
-        y: {
-          min: 0,
-          max: 1
-        }
-      }
-    }
-  });
-}
-
-
-function renderDiagnostics(d) {
-
-  destroyChart("diagnosticsChart");
-
-  charts["diagnosticsChart"] = new Chart(document.getElementById("diagnosticsChart"), {
-    type: "bar",
-    data: {
-      labels: ["Score", "Confidence", "Disagreement"],
-      datasets: [{
-        data: [d.final_score, d.confidence, d.disagreement]
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: "System Diagnostics" }
-      },
-      scales: {
-        y: {
-          min: 0,
-          max: 100
-        }
-      }
-    }
-  });
-}
-
-function renderRegime(regime) {
-
-  destroyChart("regimeChart");
-
-  const normalizedADX = regime.ADX / 100;
-  const normalizedATR = regime.ATR_pct / 10;
-
-  charts["regimeChart"] = new Chart(document.getElementById("regimeChart"), {
-    type: "bar",
-    data: {
-      labels: ["Trend Strength", "Volatility State"],
-      datasets: [{
-        data: [normalizedADX, normalizedATR]
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: "Regime Structure (Normalized)" }
-      },
-      scales: {
-        y: {
-          min: 0,
-          max: 1
-        }
-      }
-    }
-  });
-}
-
-function renderTechnical(t) {
-
-  destroyChart("technicalChart");
-
-  const emaSpread = (t.EMA_50 - t.EMA_200) / t.price;
-  const normalizedRSI = t.RSI / 100;
-
-  charts["technicalChart"] = new Chart(document.getElementById("technicalChart"), {
-    type: "bar",
-    data: {
-      labels: ["EMA Trend Spread", "RSI State", "MACD Momentum"],
-      datasets: [{
-        data: [emaSpread, normalizedRSI, t.MACD_hist]
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: "Technical Structure (Relative)" }
-      },
-      scales: {
-        y: {
-          min: -1,
-          max: 1
-        }
-      }
-    }
-  });
-}
-
-function renderRationale(text) {
-
-  const cleaned = text.replace(/\n/g, " ");
-
-  const points = cleaned.split("|").map(x => x.trim());
-
-  document.getElementById("stock-rationale").innerHTML =
-    "<ul class='rationale-list'>" +
-    points.map(p => `<li>${p}</li>`).join("") +
-    "</ul>";
-}
-
-
-async function runStockAnalysis() {
-  const symbol = readSymbol();
-  if (!symbol) {
-    setText("status-result", "Please enter a stock symbol.");
-    return;
-  }
-
-  await runRequest("stock-result", "Stock analysis", `/api/v1/stock/analyze/${symbol}`);
-}
-
-async function runCorrelationAnalysis() {
-  const symbol = readSymbol();
-  if (!symbol) {
-    setText("status-result", "Please enter a stock symbol.");
-    return;
-  }
-
-  await runRequest("correlation-result", "Correlation analysis", `/api/v1/correlation/analyze/${symbol}`);
-}
-
-async function runFundamentalReport() {
-  const symbol = readSymbol();
-  if (!symbol) {
-    setText("status-result", "Please enter a stock symbol.");
-    return;
-  }
-
-  await runRequest("fundamental-result", "Fundamental report", `/api/v1/fundamental/report/${symbol}`);
-}
-
-async function runMemoryAnalysis() {
-  const symbol = readSymbol();
-  if (!symbol) {
-    setText("status-result", "Please enter a stock symbol.");
-    return;
-  }
-
-  await runRequest("memory-result", "Memory analysis", `/api/v1/memory/analyze/${symbol}`);
-}
-
-async function runExplainAnalysis() {
-  const symbol = readSymbol();
-  if (!symbol) {
-    setText("status-result", "Please enter a stock symbol.");
-    return;
-  }
-
-  await runRequest("explain-result", "Explain analysis", `/api/v1/explain/analyze/${symbol}`);
-}
-
-async function runSwotAnalysis() {
-  const symbol = readSymbol();
-  if (!symbol) {
-    setText("status-result", "Please enter a stock symbol.");
-    return;
-  }
-
-  await runRequest("swot-result", "SWOT analysis", `/api/v1/swot/analyze/${symbol}`);
-}
-
-async function runQnAQuery() {
-  const companySlug = readCompanySlug() || readSymbol();
-  const query = readQnAQuestion();
-
-  if (!companySlug) {
-    setText("status-result", "Please enter a company slug for QnA.");
-    return;
-  }
-
-  if (!query) {
-    setText("status-result", "Please enter a question for QnA.");
-    return;
-  }
-
-  await runRequest(
-    "qna-result",
-    "QnA query",
-    "/api/v1/qna/query",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        company_slug: companySlug,
-        query
-      })
-    }
-  );
-}
-
-async function runQnANews() {
-  const companySlug = readCompanySlug() || readSymbol();
-  if (!companySlug) {
-    setText("status-result", "Please enter a company slug for news.");
-    return;
-  }
-
-  await runRequest(
-    "qna-news-result",
-    "QnA news fetch",
-    `/api/v1/qna/news/${companySlug}`
-  );
-}
-
-async function analyzeStock() {
-  await runStockAnalysis();
-}
+init();

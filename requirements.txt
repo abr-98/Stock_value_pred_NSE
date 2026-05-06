@@ -11,6 +11,7 @@ langchain
 chromadb
 openai
 tiktoken
+PyJWT
 langchain-openai 
 langchain-chroma
 lime

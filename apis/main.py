@@ -4,7 +4,8 @@ Main entry point for the API
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import sys
 import os
@@ -25,7 +26,9 @@ from apis.routers import (
     explain_router,
     qna_router,
     swot_router,
+    user_router,
 )
+from user_handler.table_creators import create_user_tables
 from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
 from apis.logging_config import setup_logging, install_utility_call_tracer
@@ -42,6 +45,8 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+frontend_dir = os.path.join(project_root, "frontend")
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -50,6 +55,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve frontend assets from FastAPI when available.
+if os.path.isdir(frontend_dir):
+    app.mount("/frontend", StaticFiles(directory=frontend_dir, html=True), name="frontend")
 
 
 @app.on_event("startup")
@@ -75,6 +84,10 @@ async def startup_event():
         system_initializer = SystemInitializer()
         system_initializer.initialize_system()
         logger.info("System initialized successfully")
+
+        logger.info("Ensuring user/account tables exist...")
+        create_user_tables()
+        logger.info("User/account tables verified")
         
         # Store initialized agents in app state for reuse
         app.state.system_initializer = system_initializer
@@ -108,6 +121,7 @@ app.include_router(memory_router.router, prefix="/api/v1/memory", tags=["Memory"
 app.include_router(explain_router.router, prefix="/api/v1/explain", tags=["Explain"])
 app.include_router(qna_router.router, prefix="/api/v1/qna", tags=["QnA & Summarization"])
 app.include_router(swot_router.router, prefix="/api/v1/swot", tags=["SWOT Analysis"])
+app.include_router(user_router.router, prefix="/api/v1/users", tags=["User Accounts"])
 
 
 @app.get("/")
@@ -116,8 +130,17 @@ async def root():
     return {
         "message": "Stock Predictor API is running",
         "version": "1.0.0",
-        "status": "healthy"
+        "status": "healthy",
+        "frontend": "/app" if os.path.isdir(frontend_dir) else None,
     }
+
+
+@app.get("/app")
+async def frontend_app():
+    """Entry route for frontend app."""
+    if not os.path.isdir(frontend_dir):
+        raise HTTPException(status_code=404, detail="Frontend directory not found")
+    return RedirectResponse(url="/frontend/index.html")
 
 
 @app.get("/health")
