@@ -286,7 +286,7 @@ def query_transcripts(
     if workspace_root is None:
         workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    tool = FetchAndAnswerTool(company_slug=company_slug)
+    tool = FetchAndAnswerTool.get_tool(company_slug=company_slug)
     tool.setup(force_refresh=force_refresh)
     raw_results = tool.answer_query(query)
 

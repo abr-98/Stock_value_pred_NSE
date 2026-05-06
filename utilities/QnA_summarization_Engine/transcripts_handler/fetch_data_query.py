@@ -37,22 +37,25 @@ def fetch_query(vectordb, query):
         
         # Re-rank using cross-encoder
         cross_encoder_scores = cross_encoder.predict([[query, doc.page_content] for doc in documents])
-        
-        if not cross_encoder_scores or len(cross_encoder_scores) == 0:
+
+        # predict() returns a numpy array; avoid boolean checks like `if not array`.
+        if cross_encoder_scores is None or len(cross_encoder_scores) == 0:
             print(f"Cross-encoder returned no scores", file=sys.stderr)
             return documents[:2]  # Fallback to first 2 documents
-        
+
+        score_values = cross_encoder_scores.tolist() if hasattr(cross_encoder_scores, "tolist") else list(cross_encoder_scores)
+
         # Combine with original scores and sort by cross-encoder score
         scored_docs = [
-            (doc, score) 
-            for doc, (_, original_score), score in zip(documents, results, cross_encoder_scores)
+            (doc, float(score))
+            for doc, score in zip(documents, score_values)
         ]
         scored_docs.sort(key=lambda x: x[1], reverse=True)
-        
+
         # Return top 2 best matching documents (or fewer if not available)
         top_docs = [doc for doc, _ in scored_docs[:2]]
         print(f"Returning {len(top_docs)} re-ranked documents", file=sys.stderr)
-        
+
         return top_docs
     except Exception as e:
         print(f"Error in fetch_query: {str(e)}", file=sys.stderr)
