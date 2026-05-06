@@ -4,7 +4,7 @@ Main entry point for the API
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import sys
@@ -28,7 +28,7 @@ from apis.routers import (
     swot_router,
     user_router,
 )
-from user_handler.table_creators import create_user_tables
+from user_handler.database_utilites.account.table_creators import create_user_tables
 from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
 from apis.logging_config import setup_logging, install_utility_call_tracer
@@ -137,11 +137,10 @@ async def root():
 
 @app.get("/app")
 async def frontend_app():
-    """Serve the integrated frontend UI entry page."""
-    index_file = os.path.join(frontend_dir, "index.html")
-    if not os.path.isfile(index_file):
-        raise HTTPException(status_code=404, detail="Frontend index.html not found")
-    return FileResponse(index_file)
+    """Entry route for frontend app."""
+    if not os.path.isdir(frontend_dir):
+        raise HTTPException(status_code=404, detail="Frontend directory not found")
+    return RedirectResponse(url="/frontend/index.html")
 
 
 @app.get("/health")

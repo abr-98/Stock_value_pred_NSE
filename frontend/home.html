@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock AI Workspace - Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/styles.css" />
+</head>
+<body data-page="home">
+  <div class="bg-grid"></div>
+  <header class="topbar">
+    <h1>Stock AI Workspace</h1>
+    <div class="topbar-actions">
+      <span id="currentUserLabel" class="muted"></span>
+      <button id="logoutBtn" class="ghost">Logout</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <nav class="sidebar-nav">
+      <a class="nav-btn active" href="/frontend/home.html">Home</a>
+      <a class="nav-btn" href="/frontend/streamlit.html">Streamlit</a>
+      <a class="nav-btn" href="/frontend/token.html">Token Usage</a>
+      <a class="nav-btn" href="/frontend/watchlist.html">Watchlist</a>
+      <a class="nav-btn" href="/frontend/portfolio.html">Portfolio</a>
+    </nav>
+
+    <div class="page-strip">
+      <span id="breadcrumb" class="crumb"></span>
+      <span id="activePageTitle" class="active-page"></span>
+    </div>
+
+    <section class="view active">
+      <div class="home-grid">
+        <a class="card nav-card" href="/frontend/streamlit.html"><h2>Streamlit Chat</h2><p>Open integrated AI chat.</p></a>
+        <a class="card nav-card" href="/frontend/token.html"><h2>Token Usage</h2><p>Inspect token/cost usage.</p></a>
+        <a class="card nav-card" href="/frontend/watchlist.html"><h2>Watchlist</h2><p>Manage tracked tickers.</p></a>
+        <a class="card nav-card" href="/frontend/portfolio.html"><h2>Portfolio</h2><p>Manage holdings.</p></a>
+      </div>
+    </section>
+  </main>
+
+  <aside id="toast" class="toast hidden"></aside>
+  <script src="/frontend/app.js"></script>
+</body>
+</html>

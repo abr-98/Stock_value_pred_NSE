@@ -6,6 +6,15 @@ const state = {
   streamlitUrl: localStorage.getItem("stockStreamlitUrl") || "http://localhost:8501",
 };
 
+const PAGE_LABELS = {
+  account: "Account",
+  home: "Home",
+  streamlit: "Streamlit",
+  token: "Token Usage",
+  watchlist: "Watchlist",
+  portfolio: "Portfolio",
+};
+
 const els = {
   appTopbar: document.getElementById("appTopbar"),
   authTabBtns: [...document.querySelectorAll(".tab-btn")],
@@ -15,20 +24,11 @@ const els = {
   planTypeInput: document.getElementById("planTypeInput"),
   logoutBtn: document.getElementById("logoutBtn"),
   currentUserLabel: document.getElementById("currentUserLabel"),
+  breadcrumb: document.getElementById("breadcrumb"),
+  activePageTitle: document.getElementById("activePageTitle"),
 
-  pageAccount: document.getElementById("page-account"),
-  pageLoading: document.getElementById("page-loading"),
-  pageApp: document.getElementById("page-app"),
-
-  navBtns: [...document.querySelectorAll(".nav-btn")],
-  homeCards: [...document.querySelectorAll(".nav-card")],
-  views: {
-    home: document.getElementById("view-home"),
-    streamlit: document.getElementById("view-streamlit"),
-    token: document.getElementById("view-token"),
-    watchlist: document.getElementById("view-watchlist"),
-    portfolio: document.getElementById("view-portfolio"),
-  },
+  accountPage: document.getElementById("accountPage"),
+  loadingPage: document.getElementById("loadingPage"),
 
   refreshUsageBtn: document.getElementById("refreshUsageBtn"),
   usageInput: document.getElementById("usageInput"),
@@ -52,6 +52,9 @@ const els = {
 };
 
 function notify(message) {
+  if (!els.toast) {
+    return;
+  }
   els.toast.textContent = message;
   els.toast.classList.remove("hidden");
   setTimeout(() => els.toast.classList.add("hidden"), 2500);
@@ -90,24 +93,6 @@ function setAuthMode(mode) {
   els.authTabBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.authMode === mode));
 }
 
-function showPage(name) {
-  const isAccount = name === "account";
-  const isLoading = name === "loading";
-  const isApp = name === "app";
-
-  els.pageAccount.classList.toggle("hidden", !isAccount);
-  els.pageLoading.classList.toggle("hidden", !isLoading);
-  els.pageApp.classList.toggle("hidden", !isApp);
-  els.appTopbar.classList.toggle("hidden", !isApp);
-}
-
-function showView(viewName) {
-  Object.entries(els.views).forEach(([key, node]) => {
-    node.classList.toggle("active", key === viewName);
-  });
-  els.navBtns.forEach(btn => btn.classList.toggle("active", btn.dataset.page === viewName));
-}
-
 async function loginOrRegister() {
   const email = els.emailInput.value.trim();
   const password = els.passwordInput.value.trim();
@@ -122,7 +107,8 @@ async function loginOrRegister() {
     payload.plan_type = els.planTypeInput.value;
   }
 
-  showPage("loading");
+  if (els.accountPage) els.accountPage.classList.add("hidden");
+  if (els.loadingPage) els.loadingPage.classList.remove("hidden");
   const data = await api(path, "POST", payload);
 
   state.token = data.access_token;
@@ -131,9 +117,9 @@ async function loginOrRegister() {
   localStorage.setItem("stockAuthToken", state.token);
   localStorage.setItem("stockUserProfile", JSON.stringify(state.user));
 
-  await hydrateApp();
-  showPage("app");
-  showView("streamlit");
+  setTimeout(() => {
+    window.location.href = "/frontend/streamlit.html";
+  }, 450);
   notify(`${state.authMode} successful`);
 }
 
@@ -142,8 +128,19 @@ function logout() {
   state.user = null;
   localStorage.removeItem("stockAuthToken");
   localStorage.removeItem("stockUserProfile");
-  showPage("account");
+  window.location.href = "/frontend/index.html";
   notify("Logged out");
+}
+
+
+function setPageStrip(page) {
+  const label = PAGE_LABELS[page] || "Workspace";
+  if (els.activePageTitle) {
+    els.activePageTitle.textContent = label;
+  }
+  if (els.breadcrumb) {
+    els.breadcrumb.textContent = `Stock AI Workspace / ${label}`;
+  }
 }
 
 async function refreshUsage() {
@@ -212,9 +209,24 @@ async function addPortfolio() {
 }
 
 async function hydrateApp() {
-  els.currentUserLabel.textContent = `${state.user.email} (${state.user.plan_type})`;
-  els.streamlitFrame.src = state.streamlitUrl;
-  await Promise.all([refreshUsage(), refreshWatchlist(), refreshPortfolio()]);
+  if (els.currentUserLabel && state.user) {
+    els.currentUserLabel.textContent = `${state.user.email} (${state.user.plan_type})`;
+  }
+
+  if (els.streamlitFrame) {
+    els.streamlitFrame.src = state.streamlitUrl;
+  }
+
+  const page = document.body.dataset.page;
+  if (page === "token") {
+    await refreshUsage();
+  }
+  if (page === "watchlist") {
+    await refreshWatchlist();
+  }
+  if (page === "portfolio") {
+    await refreshPortfolio();
+  }
 }
 
 function wireEvents() {
@@ -222,45 +234,64 @@ function wireEvents() {
     btn.addEventListener("click", () => setAuthMode(btn.dataset.authMode));
   });
 
-  els.authSubmitBtn.addEventListener("click", () => loginOrRegister().catch(err => {
-    showPage("account");
-    notify(err.message);
-  }));
+  if (els.authSubmitBtn) {
+    els.authSubmitBtn.addEventListener("click", () => loginOrRegister().catch(err => {
+      if (els.loadingPage) els.loadingPage.classList.add("hidden");
+      if (els.accountPage) els.accountPage.classList.remove("hidden");
+      notify(err.message);
+    }));
+  }
 
-  els.logoutBtn.addEventListener("click", logout);
+  if (els.logoutBtn) {
+    els.logoutBtn.addEventListener("click", logout);
+  }
 
-  els.navBtns.forEach(btn => {
-    btn.addEventListener("click", () => showView(btn.dataset.page));
-  });
+  if (els.refreshUsageBtn) {
+    els.refreshUsageBtn.addEventListener("click", () => refreshUsage().catch(err => notify(err.message)));
+  }
+  if (els.addWatchBtn) {
+    els.addWatchBtn.addEventListener("click", () => addWatchlist().catch(err => notify(err.message)));
+  }
+  if (els.addPortfolioBtn) {
+    els.addPortfolioBtn.addEventListener("click", () => addPortfolio().catch(err => notify(err.message)));
+  }
 
-  els.homeCards.forEach(card => {
-    card.addEventListener("click", () => showView(card.dataset.go));
-  });
-
-  els.refreshUsageBtn.addEventListener("click", () => refreshUsage().catch(err => notify(err.message)));
-  els.addWatchBtn.addEventListener("click", () => addWatchlist().catch(err => notify(err.message)));
-  els.addPortfolioBtn.addEventListener("click", () => addPortfolio().catch(err => notify(err.message)));
-
-  els.openStreamlitBtn.addEventListener("click", () => window.open(state.streamlitUrl, "_blank", "noopener"));
+  if (els.openStreamlitBtn) {
+    els.openStreamlitBtn.addEventListener("click", () => window.open(state.streamlitUrl, "_blank", "noopener"));
+  }
 }
 
 async function init() {
+  const page = document.body.dataset.page || "account";
+  setPageStrip(page);
   setAuthMode("login");
   wireEvents();
 
+  if (page === "account") {
+    if (state.token) {
+      try {
+        await api("/api/v1/users/me");
+        window.location.href = "/frontend/home.html";
+      } catch (err) {
+        localStorage.removeItem("stockAuthToken");
+        localStorage.removeItem("stockUserProfile");
+      }
+    }
+    return;
+  }
+
   if (!state.token) {
-    showPage("account");
+    window.location.href = "/frontend/index.html";
     return;
   }
 
   try {
-    showPage("loading");
     await api("/api/v1/users/me");
     await hydrateApp();
-    showPage("app");
-    showView("streamlit");
   } catch (err) {
-    logout();
+    localStorage.removeItem("stockAuthToken");
+    localStorage.removeItem("stockUserProfile");
+    window.location.href = "/frontend/index.html";
     notify(`Session expired: ${err.message}`);
   }
 }
