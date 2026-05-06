@@ -11,7 +11,12 @@ from apis.logging_config import setup_logging, log_service_io
 logger = setup_logging("service-utility-qna-db-init")
 
 
+def _normalize_company_slug(company_slug):
+    return (company_slug or "").upper().replace(".NS", "").strip()
+
+
 def initiate_query_database(company_slug, force_refresh=False):
+    company_slug = _normalize_company_slug(company_slug)
     log_service_io(logger, "utility.qna.db_init.request", inputs={"company_slug": company_slug})
     current_dir = os.path.dirname(os.path.abspath(__file__))
     documents_dir = os.path.join(current_dir, "documents", company_slug)

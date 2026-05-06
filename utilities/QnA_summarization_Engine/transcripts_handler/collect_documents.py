@@ -5,6 +5,10 @@ import os
 import sys
 
 
+def _normalize_company_slug(company_slug):
+    return (company_slug or "").upper().replace(".NS", "").strip()
+
+
 def _download_transcripts_from_db(company_slug, documents_dir):
     """
     Download transcript PDFs listed in the database for the company.
@@ -52,6 +56,8 @@ def collect_documents_for_company(company_slug, force_refresh=False):
     Raises:
         ValueError: If no documents can be found or downloaded
     """
+    company_slug = _normalize_company_slug(company_slug)
+
     # Documents are stored per company so one query does not invalidate another.
     current_dir = os.path.dirname(os.path.abspath(__file__))
     documents_root = os.path.join(current_dir, "documents")
