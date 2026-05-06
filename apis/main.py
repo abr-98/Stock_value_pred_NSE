@@ -28,7 +28,7 @@ from apis.routers import (
     swot_router,
     user_router,
 )
-from user_handler.table_creators import create_user_tables
+from user_handler.database_utilites.account.table_creators import create_user_tables
 from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
 from apis.logging_config import setup_logging, install_utility_call_tracer

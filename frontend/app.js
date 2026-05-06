@@ -22,6 +22,7 @@ const els = {
   emailInput: document.getElementById("emailInput"),
   passwordInput: document.getElementById("passwordInput"),
   planTypeInput: document.getElementById("planTypeInput"),
+  sessionBanner: document.getElementById("sessionBanner"),
   logoutBtn: document.getElementById("logoutBtn"),
   currentUserLabel: document.getElementById("currentUserLabel"),
   breadcrumb: document.getElementById("breadcrumb"),
@@ -87,6 +88,9 @@ async function api(path, method = "GET", body = null) {
 }
 
 function setAuthMode(mode) {
+  if (!els.authSubmitBtn || !els.planTypeInput) {
+    return;
+  }
   state.authMode = mode;
   els.authSubmitBtn.textContent = mode === "login" ? "Login" : "Register";
   els.planTypeInput.style.display = mode === "register" ? "block" : "none";
@@ -130,6 +134,25 @@ function logout() {
   localStorage.removeItem("stockUserProfile");
   window.location.href = "/frontend/index.html";
   notify("Logged out");
+}
+
+
+function showSessionBannerFromQuery() {
+  if (!els.sessionBanner) {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search || "");
+  const reason = params.get("reason");
+
+  if (reason === "session-expired") {
+    els.sessionBanner.textContent = "Your session expired. Please login again.";
+    els.sessionBanner.classList.remove("hidden");
+  } else if (reason === "unauthorized") {
+    els.sessionBanner.textContent = "Please login to continue.";
+    els.sessionBanner.classList.remove("hidden");
+  } else {
+    els.sessionBanner.classList.add("hidden");
+  }
 }
 
 
@@ -209,12 +232,17 @@ async function addPortfolio() {
 }
 
 async function hydrateApp() {
-  if (els.currentUserLabel && state.user) {
-    els.currentUserLabel.textContent = `${state.user.email} (${state.user.plan_type})`;
+  if (els.currentUserLabel) {
+    if (state.user && state.user.email) {
+      els.currentUserLabel.textContent = `${state.user.email} (${state.user.plan_type || "free"})`;
+    } else {
+      els.currentUserLabel.textContent = "Logged in";
+    }
   }
 
   if (els.streamlitFrame) {
-    els.streamlitFrame.src = state.streamlitUrl;
+    const base = String(state.streamlitUrl || "http://localhost:8501").replace(/\/+$/, "");
+    els.streamlitFrame.src = `${base}/?embed=true`;
   }
 
   const page = document.body.dataset.page;
@@ -230,9 +258,11 @@ async function hydrateApp() {
 }
 
 function wireEvents() {
-  els.authTabBtns.forEach(btn => {
-    btn.addEventListener("click", () => setAuthMode(btn.dataset.authMode));
-  });
+  if (els.authTabBtns && els.authTabBtns.length) {
+    els.authTabBtns.forEach(btn => {
+      btn.addEventListener("click", () => setAuthMode(btn.dataset.authMode));
+    });
+  }
 
   if (els.authSubmitBtn) {
     els.authSubmitBtn.addEventListener("click", () => loginOrRegister().catch(err => {
@@ -257,20 +287,31 @@ function wireEvents() {
   }
 
   if (els.openStreamlitBtn) {
-    els.openStreamlitBtn.addEventListener("click", () => window.open(state.streamlitUrl, "_blank", "noopener"));
+    els.openStreamlitBtn.addEventListener("click", () => {
+      const base = String(state.streamlitUrl || "http://localhost:8501").replace(/\/+$/, "");
+      window.open(`${base}/?embed=true`, "_blank", "noopener");
+    });
   }
 }
 
 async function init() {
   const page = document.body.dataset.page || "account";
   setPageStrip(page);
-  setAuthMode("login");
+
+  // Only initialize auth form controls on the account page.
+  if (page === "account") {
+    setAuthMode("login");
+  }
+
   wireEvents();
 
   if (page === "account") {
+    showSessionBannerFromQuery();
     if (state.token) {
       try {
-        await api("/api/v1/users/me");
+        const me = await api("/api/v1/users/me");
+        state.user = me;
+        localStorage.setItem("stockUserProfile", JSON.stringify(me));
         window.location.href = "/frontend/home.html";
       } catch (err) {
         localStorage.removeItem("stockAuthToken");
@@ -281,17 +322,19 @@ async function init() {
   }
 
   if (!state.token) {
-    window.location.href = "/frontend/index.html";
+    window.location.href = "/frontend/index.html?reason=unauthorized";
     return;
   }
 
   try {
-    await api("/api/v1/users/me");
+    const me = await api("/api/v1/users/me");
+    state.user = me;
+    localStorage.setItem("stockUserProfile", JSON.stringify(me));
     await hydrateApp();
   } catch (err) {
     localStorage.removeItem("stockAuthToken");
     localStorage.removeItem("stockUserProfile");
-    window.location.href = "/frontend/index.html";
+    window.location.href = "/frontend/index.html?reason=session-expired";
     notify(`Session expired: ${err.message}`);
   }
 }

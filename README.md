@@ -8,6 +8,12 @@ Run the Streamlit app:
 streamlit run streamlit_app.py
 ```
 
+For embedded frontend mode (`/frontend/streamlit.html`), run with iframe-friendly server settings:
+
+```bash
+streamlit run streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false
+```
+
 The app includes:
 - Persistent thread memory for follow-up queries.
 - MCP-backed tool orchestration (stock, fundamental, memory, QnA, SWOT, etc.).

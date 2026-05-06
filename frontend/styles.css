@@ -63,6 +63,16 @@ h1, h2 { font-family: "Fraunces", serif; margin: 0 0 10px; }
   width: min(520px, 96vw);
 }
 
+.session-banner {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #f0c29b;
+  background: #fff1e5;
+  color: #8a3a0c;
+  font-size: 13px;
+}
+
 .tabs { display: flex; gap: 8px; margin: 10px 0; }
 
 .tab-btn { background: #fff; color: var(--ink-soft); border: 1px solid var(--line); }
