@@ -5,17 +5,41 @@ from utilities.fundamental_document.extract_pdf_text import extract_pdf_text
 from utilities.fundamental_document.build_chunks import build_chunks
 from utilities.fundamental_document.build_vector_store import build_vector_store
 from utilities.fundamental_document.FundamentalRAGSystem import FundamentalRAGSystem
+import os
+import sys
 
 def get_company_earning_analysis(symbol):
-    symbol = symbol.upper().replace(".NS", "")
-    annual_report_url = get_annual_reports_feed(symbol)
-    path = download_pdf(annual_report_url, f"{symbol}.pdf")
-    print(path, file=__import__('sys').stderr)
-    pages = extract_pdf_text(path)
-    documents = build_chunks(pages, company=symbol, year=datetime.now().year)
-    vectordb = build_vector_store(documents)
+    try:
+        symbol = symbol.upper().replace(".NS", "")
+        print(f"Starting fundamental analysis for {symbol}", file=sys.stderr)
+        
+        annual_report_url = get_annual_reports_feed(symbol)
+        print(f"Found annual report URL for {symbol}", file=sys.stderr)
+        
+        path = download_pdf(annual_report_url, f"{symbol}.pdf")
+        print(f"Downloaded PDF to {path}", file=sys.stderr)
+        
+        pages = extract_pdf_text(path)
+        print(f"Extracted {len(pages)} pages from PDF", file=sys.stderr)
+        
+        documents = build_chunks(pages, company=symbol, year=datetime.now().year)
+        print(f"Built {len(documents)} chunks from pages", file=sys.stderr)
 
-    system = FundamentalRAGSystem(vectordb)
-    interpretation = system.explain_company(symbol)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        persist_dir = os.path.join(current_dir, "..", "..", "fundamental_db", symbol)
+        
+        vectordb = build_vector_store(documents, persist_dir=persist_dir, reset=True)
+        print(f"Built vector store successfully", file=sys.stderr)
 
-    return interpretation
+        system = FundamentalRAGSystem(vectordb)
+        print(f"Created RAG system, starting interpretation for {symbol}", file=sys.stderr)
+        
+        interpretation = system.explain_company(symbol)
+        print(f"Completed interpretation for {symbol}", file=sys.stderr)
+
+        return interpretation
+    except Exception as e:
+        print(f"Error in get_company_earning_analysis: {str(e)}", file=sys.stderr)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        raise

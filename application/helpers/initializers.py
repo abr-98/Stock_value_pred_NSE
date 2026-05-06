@@ -12,12 +12,32 @@ from agents.CorrelationAgent import CorrelationAgent
 from agents.FundamentalDocumentsAgent import FundamentalDocumentsAgent
 from agents.MemoryAgent import MemoryAgent
 
-from environment import load_api_key
 from application.helpers.vectordb import VectorDB
 from apis.logging_config import setup_logging, log_service_io
 
+import os
 
 logger = setup_logging("service-system-initializer")
+
+def _ensure_api_key():
+    """Load OpenAI API key from file if not already set."""
+    if os.environ.get("OPENAI_API_KEY"):
+        return
+    
+    try:
+        # Find OpenAI-Key.txt in the project root
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+        key_file = os.path.join(project_root, "OpenAI-Key.txt")
+        
+        if os.path.exists(key_file):
+            with open(key_file) as f:
+                api_key = f.readline().strip()
+                if api_key:
+                    os.environ["OPENAI_API_KEY"] = api_key
+                    logger.info("Loaded OpenAI API key from OpenAI-Key.txt")
+    except Exception as e:
+        logger.warning(f"Could not load OPENAI_API_KEY: {e}")
 
 class SystemInitializer:
     """
@@ -43,7 +63,7 @@ class SystemInitializer:
 
     def initialize_system(self):
         log_service_io(logger, "initializer.initialize_system.request", inputs={"stage": "start"})
-        load_api_key()
+        _ensure_api_key()
         VectorDB.initialize_vector_db()
 
         # Initialize individual stock agents

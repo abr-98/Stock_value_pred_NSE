@@ -7,6 +7,25 @@ import sys
 # Add parent directory to path to enable imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Load environment variables early, before anything else
+from dotenv import load_dotenv
+load_dotenv()
+
+# Load OpenAI API key if not already set
+if not os.environ.get("OPENAI_API_KEY"):
+    try:
+        key_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "OpenAI-Key.txt")
+        if os.path.exists(key_file):
+            with open(key_file) as f:
+                api_key = f.readline().strip()
+                if api_key:
+                    os.environ["OPENAI_API_KEY"] = api_key
+                    print("Loaded OpenAI API key from OpenAI-Key.txt", file=sys.stderr)
+        else:
+            print(f"Warning: OpenAI-Key.txt not found at {key_file}", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Could not load OPENAI_API_KEY: {e}", file=sys.stderr)
+
 from apis.logging_config import setup_logging
 from apis.logging_config import install_utility_call_tracer
 

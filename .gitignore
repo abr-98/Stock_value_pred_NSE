@@ -157,3 +157,5 @@ documents/
 *.db
 *.bin
 allfiles.txt
+fundamental_db/
+fundamental_db/chroma.sqlite3

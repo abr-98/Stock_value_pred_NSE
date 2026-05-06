@@ -32,7 +32,11 @@ async def query_transcripts(request: QnAQueryRequest):
         log_service_io(
             logger,
             "qna.query.request",
-            inputs={"company_slug": request.company_slug, "query": request.query},
+            inputs={
+                "company_slug": request.company_slug,
+                "query": request.query,
+                "force_refresh": request.force_refresh,
+            },
         )
         logger.info(f"QnA query for '{request.company_slug}': {request.query}")
 
@@ -41,7 +45,7 @@ async def query_transcripts(request: QnAQueryRequest):
         )
 
         tool = FetchAndAnswerTool(company_slug=request.company_slug)
-        tool.setup()
+        tool.setup(force_refresh=request.force_refresh)
         raw_results = tool.answer_query(request.query)
 
         # Convert LangChain Document objects to serialisable dicts

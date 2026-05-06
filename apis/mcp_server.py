@@ -14,7 +14,6 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from environment import load_api_key
 from application.helpers.initializers import SystemInitializer
 from application.engines.stock_data_engine import StockDataEngine
 from application.engines.portfolio_data_engine import PortfolioDataEngine
@@ -27,6 +26,23 @@ from apis.logging_config import setup_logging, log_service_io, install_utility_c
 
 logger = setup_logging("stock-predictor-mcp")
 install_utility_call_tracer("service-utility-tracer-mcp")
+
+
+def _ensure_api_key():
+    """Load OpenAI API key from file if not already set."""
+    if os.environ.get("OPENAI_API_KEY"):
+        return
+    
+    try:
+        key_file = os.path.join(project_root, "OpenAI-Key.txt")
+        if os.path.exists(key_file):
+            with open(key_file) as f:
+                api_key = f.readline().strip()
+                if api_key:
+                    os.environ["OPENAI_API_KEY"] = api_key
+                    logger.info("Loaded OpenAI API key from OpenAI-Key.txt")
+    except Exception as e:
+        logger.warning(f"Could not load OPENAI_API_KEY: {e}")
 
 
 class RuntimeContext:
@@ -46,7 +62,7 @@ class RuntimeContext:
                 return self._agents
 
             logger.info("Initializing MCP runtime context")
-            load_api_key()
+            _ensure_api_key()
             initializer = SystemInitializer()
             initializer.initialize_system()
             self._agents = initializer.get_agents()
@@ -249,11 +265,17 @@ def query_transcripts(
     company_slug: str,
     query: str,
     workspace_root: Optional[str] = None,
+    force_refresh: bool = False,
 ) -> Dict[str, Any]:
     log_service_io(
         logger,
         "mcp.query_transcripts.request",
-        inputs={"company_slug": company_slug, "query": query, "workspace_root": workspace_root},
+        inputs={
+            "company_slug": company_slug,
+            "query": query,
+            "workspace_root": workspace_root,
+            "force_refresh": force_refresh,
+        },
     )
     import os
     from utilities.QnA_summarization_Engine.transcripts_handler.fetch_and_answer_tool import (
@@ -265,7 +287,7 @@ def query_transcripts(
         workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     tool = FetchAndAnswerTool(company_slug=company_slug)
-    tool.setup()
+    tool.setup(force_refresh=force_refresh)
     raw_results = tool.answer_query(query)
 
     results = [
@@ -349,8 +371,8 @@ TOOL_SPECS = {
         "description": "Analyze stock correlation patterns for a symbol.",
         "handler": analyze_correlation,
     },
-    "get_fundamental_report": {
-        "description": "Generate a comprehensive fundamental report for a symbol.",
+    "get_fundamental_annual_earnings_report": {
+        "description": "Generate a comprehensive fundamental annual earnings report for a stock symbol.",
         "handler": get_fundamental_report,
     },
     "analyze_memory": {
@@ -363,8 +385,8 @@ TOOL_SPECS = {
     },
     "query_transcripts": {
         "description": (
-            "Answer a natural-language question using corporate annual-report PDFs and "
-            "earnings-call transcripts for a given company. Builds a vector store from "
+            "Answer a natural-language question using corporate result PDFs and "
+            "investor call transcripts for a given company. Builds a vector store from "
             "downloaded documents and returns the most relevant chunks."
         ),
         "handler": query_transcripts,
@@ -391,11 +413,9 @@ PROFILE_TOOLS = {
     "portfolio_analysis_agent": ["health_check", "analyze_portfolio"],
     "diversification_agent": ["health_check", "analyze_portfolio"],
     "correlation_agent": ["health_check", "analyze_correlation"],
-    "fundamental_documents_agent": [
+    "fundamental_documents_annual_earnings_agent": [
         "health_check",
-        "get_fundamental_report",
-        "query_transcripts",
-        "get_company_news",
+        "get_fundamental_annual_earnings_report",
         "swot_analysis",
     ],
     "memory_agent": ["health_check", "analyze_memory"],
