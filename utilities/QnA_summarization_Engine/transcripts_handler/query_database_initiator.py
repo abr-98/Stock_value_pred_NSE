@@ -43,7 +43,11 @@ def initiate_query_database(company_slug, force_refresh=False):
     all_documents = []
     for file in files:
         pages = extract_pdf_text(os.path.join(documents_dir, file))
-        all_documents.extend(build_chunks(pages, company_slug, datetime.now().year))
+        # Derive source tag from filename convention:
+        # "TCS.pdf"              -> annual_report
+        # "TCS_transcript_1.pdf" -> transcript
+        source = "transcript" if "_transcript_" in file else "annual_report"
+        all_documents.extend(build_chunks(pages, company_slug, datetime.now().year, source=source))
 
     vectordb = build_vector_store(all_documents, persist_dir=persist_dir)
 

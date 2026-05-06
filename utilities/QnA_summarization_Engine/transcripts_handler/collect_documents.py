@@ -4,13 +4,47 @@ import shutil
 import os
 import sys
 
+
+def _download_transcripts_from_db(company_slug, documents_dir):
+    """
+    Download transcript PDFs listed in the database for the company.
+    Skips any URL that fails without aborting the whole collection step.
+    Returns the number of transcripts successfully saved.
+    """
+    try:
+        from utilities.QnA_summarization_Engine.transcripts_handler.read_transcripts import read_transcripts_from_database
+        urls = read_transcripts_from_database(company_slug)
+        if not urls:
+            print(f"No transcript URLs found in database for {company_slug}", file=sys.stderr)
+            return 0
+        saved = 0
+        for i, url in enumerate(urls, start=1):
+            dest = os.path.join(documents_dir, f"{company_slug}_transcript_{i}.pdf")
+            if os.path.exists(dest):
+                print(f"Transcript {i} already cached, skipping", file=sys.stderr)
+                saved += 1
+                continue
+            try:
+                download_pdf(url, dest)
+                print(f"Downloaded transcript {i} for {company_slug}", file=sys.stderr)
+                saved += 1
+            except Exception as exc:
+                print(f"Failed to download transcript {i} ({url}): {exc}", file=sys.stderr)
+        return saved
+    except Exception as exc:
+        print(f"Could not fetch transcripts from database for {company_slug}: {exc}", file=sys.stderr)
+        return 0
+
+
 def collect_documents_for_company(company_slug, force_refresh=False):
     """
-    Collect annual report documents for a company.
+    Collect all documents for a company: annual report PDF + earnings-call
+    transcripts from the database.  Both are placed in the same per-company
+    documents folder so the vector store builder indexes everything together.
     
     Args:
         company_slug: Company symbol (e.g., 'TCS', 'INFY')
-        force_refresh: If True, re-download documents
+        force_refresh: If True, re-download all documents
         
     Returns:
         Path to documents directory
@@ -22,31 +56,43 @@ def collect_documents_for_company(company_slug, force_refresh=False):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     documents_root = os.path.join(current_dir, "documents")
     documents_dir = os.path.join(documents_root, company_slug)
-    pdf_path = os.path.join(documents_dir, f"{company_slug}.pdf")
+    annual_report_path = os.path.join(documents_dir, f"{company_slug}.pdf")
 
     if force_refresh and os.path.exists(documents_dir):
         shutil.rmtree(documents_dir)
 
     os.makedirs(documents_dir, exist_ok=True)
 
-    if os.path.exists(pdf_path) and not force_refresh:
-        print(f"Using cached documents for {company_slug} from {pdf_path}", file=sys.stderr)
-        return documents_dir
+    # ── Annual report ──────────────────────────────────────────────────────────
+    if os.path.exists(annual_report_path) and not force_refresh:
+        print(f"Using cached annual report for {company_slug}", file=sys.stderr)
+    else:
+        try:
+            print(f"Downloading annual report for {company_slug}...", file=sys.stderr)
+            url = get_annual_reports_feed(company_slug)
+            download_pdf(url, annual_report_path)
+            print(f"Downloaded annual report to {annual_report_path}", file=sys.stderr)
+        except Exception as e:
+            print(f"Annual report download failed for {company_slug}: {e}", file=sys.stderr)
+            # Non-fatal if transcripts cover the gap; handled below.
 
-    try:
-        print(f"Collecting documents for company {company_slug}...", file=sys.stderr)
-        annual_reports = get_annual_reports_feed(company_slug)
-        print(f"Fetched annual reports URL for {company_slug}: {annual_reports}", file=sys.stderr)
-        
-        download_pdf(annual_reports, pdf_path)
-        print(f"Downloaded PDF to {pdf_path}", file=sys.stderr)
-        
-        return documents_dir
-    except Exception as e:
-        error_msg = f"Failed to collect documents for {company_slug}: {str(e)}"
-        print(error_msg, file=sys.stderr)
-        # Check if we have any cached documents as fallback
-        if os.path.exists(documents_dir) and os.listdir(documents_dir):
-            print(f"Using existing cached documents as fallback", file=sys.stderr)
-            return documents_dir
-        raise ValueError(error_msg)
+    # ── Transcripts from database ──────────────────────────────────────────────
+    transcripts_saved = _download_transcripts_from_db(company_slug, documents_dir)
+    print(
+        f"Transcript documents available for {company_slug}: {transcripts_saved}",
+        file=sys.stderr,
+    )
+
+    # ── Final health check ─────────────────────────────────────────────────────
+    available = os.listdir(documents_dir)
+    if not available:
+        raise ValueError(
+            f"No documents (annual report or transcripts) found for {company_slug}. "
+            "Check NSE connectivity and database transcript entries."
+        )
+
+    print(
+        f"Total documents collected for {company_slug}: {len(available)} file(s)",
+        file=sys.stderr,
+    )
+    return documents_dir
