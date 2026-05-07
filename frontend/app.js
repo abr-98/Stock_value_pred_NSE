@@ -223,38 +223,53 @@ async function fetchTickerInsights(ticker, forceRefresh = false) {
     }
   }
 
-  try {
-    const [stockResp, memResp] = await Promise.all([
-      api(`/api/v1/stock/analyze/${encodeURIComponent(ticker)}`),
-      api(`/api/v1/memory/analyze/${encodeURIComponent(ticker)}`),
-    ]);
+  const [stockRes, memoryRes] = await Promise.allSettled([
+    api(`/api/v1/stock/analyze/${encodeURIComponent(ticker)}`),
+    api(`/api/v1/memory/analyze/${encodeURIComponent(ticker)}`),
+  ]);
 
-    const stockData = (stockResp && stockResp.data) ? stockResp.data : {};
-    const signals = Array.isArray(stockData.signals)
-      ? stockData.signals
-      : (Array.isArray(stockResp && stockResp.signals) ? stockResp.signals : []);
+  const stockResp = stockRes.status === "fulfilled" ? stockRes.value : null;
+  const memResp = memoryRes.status === "fulfilled" ? memoryRes.value : null;
 
-    const techSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "technical") || {};
-    const sentSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "sentiment") || {};
-
-    const memoryReport = (memResp && memResp.report) ? memResp.report : {};
-    const memoryAnalysis = (memoryReport && typeof memoryReport.analysis === "object" && memoryReport.analysis !== null)
-      ? memoryReport.analysis
-      : memoryReport;
-
-    const result = {
-      technical_score: toNum(techSignal.score ?? techSignal.signal_score),
-      sentiment_score: toNum(sentSignal.score ?? sentSignal.signal_score),
-      final_score: toNum(stockData.final_score ?? stockData.signal_score ?? stockData.aggregated_score ?? stockResp.final_score),
-      avg_forward_return: toNum(memoryAnalysis.avg_forward_return ?? memoryAnalysis.avg_return ?? memoryAnalysis.average_return),
-      positive_ratio: toNum(memoryAnalysis.positive_ratio ?? memoryAnalysis.win_rate ?? memoryAnalysis.positive_outcome_ratio),
-    };
-
-    setCachedTickerInsights(ticker, result);
-    return result;
-  } catch (e) {
+  if (!stockResp && !memResp) {
     return null;
   }
+
+  const stockData = (stockResp && stockResp.data) ? stockResp.data : {};
+  const signals = Array.isArray(stockData.signals)
+    ? stockData.signals
+    : (Array.isArray(stockResp && stockResp.signals) ? stockResp.signals : []);
+
+  const techSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "technical") || {};
+  const sentSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "sentiment") || {};
+
+  const memoryReport = (memResp && memResp.report) ? memResp.report : {};
+  const memoryAnalysis = (memoryReport && typeof memoryReport.analysis === "object" && memoryReport.analysis !== null)
+    ? memoryReport.analysis
+    : memoryReport;
+
+  const result = {
+    technical_score: toNum(techSignal.score ?? techSignal.signal_score),
+    sentiment_score: toNum(sentSignal.score ?? sentSignal.signal_score),
+    final_score: toNum(stockData.final_score ?? stockData.signal_score ?? stockData.aggregated_score ?? (stockResp ? stockResp.final_score : null)),
+    avg_forward_return: toNum(memoryAnalysis.avg_forward_return ?? memoryAnalysis.avg_return ?? memoryAnalysis.average_return),
+    positive_ratio: toNum(memoryAnalysis.positive_ratio ?? memoryAnalysis.win_rate ?? memoryAnalysis.positive_outcome_ratio),
+  };
+
+  if (result.final_score === null) {
+    const partial = [result.technical_score, result.sentiment_score].filter(v => v !== null);
+    if (partial.length) {
+      result.final_score = partial.reduce((a, b) => a + b, 0) / partial.length;
+    }
+  }
+
+  const hasAnyValue = Object.values(result).some(v => v !== null);
+  if (!hasAnyValue) {
+    return null;
+  }
+
+  setCachedTickerInsights(ticker, result);
+  return result;
 }
 
 function scoreColor(val) {
