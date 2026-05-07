@@ -200,18 +200,85 @@ button.ghost {
 }
 
 .plain-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 8px;
+  padding: 8px 10px;
 }
 
-.plain-list li button {
-  width: auto;
-  padding: 6px 10px;
+.ticker-row { display: grid; gap: 6px; }
+
+.ticker-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticker-name {
+  font-weight: 700;
+  font-size: 14px;
+  flex: 1;
+}
+
+.ticker-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.rm-btn {
+  width: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.refresh-btn {
+  width: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ticker-insights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+}
+
+.ticker-insights.loading {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-style: italic;
+  align-items: center;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  width: auto;
+  border: none;
+  cursor: default;
+}
+
+.badge-positive { background: #d4f0e0; color: #1a6b3e; }
+.badge-negative { background: #fde8e4; color: #8a2012; }
+.badge-neutral  { background: #ebebeb; color: #56636f; }
 
 .usage-panel {
   display: grid;

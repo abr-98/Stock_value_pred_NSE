@@ -6,6 +6,47 @@ const state = {
   streamlitUrl: localStorage.getItem("stockStreamlitUrl") || "http://localhost:8501",
 };
 
+function insightsCacheKey() {
+  const uid = state.user && state.user.id ? String(state.user.id) : "anon";
+  return `stockTickerInsights:${uid}`;
+}
+
+function loadInsightsCache() {
+  try {
+    return JSON.parse(localStorage.getItem(insightsCacheKey()) || "{}") || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveInsightsCache(cacheObj) {
+  localStorage.setItem(insightsCacheKey(), JSON.stringify(cacheObj || {}));
+}
+
+function getCachedTickerInsights(ticker) {
+  const cache = loadInsightsCache();
+  return cache[ticker] || null;
+}
+
+function setCachedTickerInsights(ticker, value) {
+  const cache = loadInsightsCache();
+  cache[ticker] = value;
+  saveInsightsCache(cache);
+}
+
+function clearCachedTickerInsights(ticker) {
+  const cache = loadInsightsCache();
+  if (Object.prototype.hasOwnProperty.call(cache, ticker)) {
+    delete cache[ticker];
+    saveInsightsCache(cache);
+  }
+}
+
+function toNum(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 const PAGE_LABELS = {
   account: "Account",
   home: "Home",
@@ -174,17 +215,151 @@ async function refreshUsage() {
   els.usageCost.textContent = Number(usage.total_cost || 0).toFixed(6);
 }
 
+async function fetchTickerInsights(ticker, forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = getCachedTickerInsights(ticker);
+    if (cached) {
+      return cached;
+    }
+  }
+
+  const [stockRes, memoryRes] = await Promise.allSettled([
+    api(`/api/v1/stock/analyze/${encodeURIComponent(ticker)}`),
+    api(`/api/v1/memory/analyze/${encodeURIComponent(ticker)}`),
+  ]);
+
+  const stockResp = stockRes.status === "fulfilled" ? stockRes.value : null;
+  const memResp = memoryRes.status === "fulfilled" ? memoryRes.value : null;
+
+  if (!stockResp && !memResp) {
+    return null;
+  }
+
+  const stockData = (stockResp && stockResp.data) ? stockResp.data : {};
+  const signals = Array.isArray(stockData.signals)
+    ? stockData.signals
+    : (Array.isArray(stockResp && stockResp.signals) ? stockResp.signals : []);
+
+  const techSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "technical") || {};
+  const sentSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "sentiment") || {};
+
+  const memoryReport = (memResp && memResp.report) ? memResp.report : {};
+  const memoryAnalysis = (memoryReport && typeof memoryReport.analysis === "object" && memoryReport.analysis !== null)
+    ? memoryReport.analysis
+    : memoryReport;
+
+  const result = {
+    technical_score: toNum(techSignal.score ?? techSignal.signal_score),
+    sentiment_score: toNum(sentSignal.score ?? sentSignal.signal_score),
+    final_score: toNum(stockData.final_score ?? stockData.signal_score ?? stockData.aggregated_score ?? (stockResp ? stockResp.final_score : null)),
+    avg_forward_return: toNum(memoryAnalysis.avg_forward_return ?? memoryAnalysis.avg_return ?? memoryAnalysis.average_return),
+    positive_ratio: toNum(memoryAnalysis.positive_ratio ?? memoryAnalysis.win_rate ?? memoryAnalysis.positive_outcome_ratio),
+  };
+
+  if (result.final_score === null) {
+    const partial = [result.technical_score, result.sentiment_score].filter(v => v !== null);
+    if (partial.length) {
+      result.final_score = partial.reduce((a, b) => a + b, 0) / partial.length;
+    }
+  }
+
+  const hasAnyValue = Object.values(result).some(v => v !== null);
+  if (!hasAnyValue) {
+    return null;
+  }
+
+  setCachedTickerInsights(ticker, result);
+  return result;
+}
+
+function scoreColor(val) {
+  if (val === null || val === undefined || isNaN(val)) return "badge-neutral";
+  return val >= 0 ? "badge-positive" : "badge-negative";
+}
+
+function fmtScore(val) {
+  if (val === null || val === undefined || isNaN(val)) return "–";
+  return Number(val).toFixed(3);
+}
+
+function fmtPct(val) {
+  if (val === null || val === undefined || isNaN(val)) return "–";
+  return (Number(val) * 100).toFixed(2) + "%";
+}
+
+function renderInsights(container, ins) {
+  if (!ins) {
+    container.innerHTML = `<span class="badge badge-neutral">Analysis unavailable</span>`;
+    return;
+  }
+  container.innerHTML = `
+    <span class="badge ${scoreColor(ins.technical_score)}" title="Technical score">Tech ${fmtScore(ins.technical_score)}</span>
+    <span class="badge ${scoreColor(ins.sentiment_score)}" title="Sentiment score">Sent ${fmtScore(ins.sentiment_score)}</span>
+    <span class="badge ${scoreColor(ins.final_score)}" title="Overall signal score">Signal ${fmtScore(ins.final_score)}</span>
+    <span class="badge ${scoreColor(ins.avg_forward_return)}" title="Avg future return from memory patterns">Avg Return ${fmtPct(ins.avg_forward_return)}</span>
+    <span class="badge badge-neutral" title="Ratio of historically positive outcomes">+ve Ratio ${fmtPct(ins.positive_ratio)}</span>
+  `;
+}
+
+async function forceRefreshTickerInsights(ticker, container, refreshButton) {
+  if (container) {
+    container.classList.add("loading");
+    container.textContent = "Refreshing analysis...";
+  }
+  if (refreshButton) {
+    refreshButton.disabled = true;
+    refreshButton.textContent = "Refreshing...";
+  }
+
+  const ins = await fetchTickerInsights(ticker, true);
+  if (container) {
+    container.classList.remove("loading");
+    renderInsights(container, ins);
+  }
+  if (refreshButton) {
+    refreshButton.disabled = false;
+    refreshButton.textContent = "Refresh";
+  }
+}
+
 async function refreshWatchlist() {
   const items = await api("/api/v1/users/watchlist");
   els.watchlistList.innerHTML = "";
   items.forEach(item => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${item.ticker}</span><button data-ticker="${item.ticker}">Remove</button>`;
-    li.querySelector("button").addEventListener("click", async () => {
+    li.className = "ticker-row";
+    li.innerHTML = `
+      <div class="ticker-header">
+        <span class="ticker-name">${item.ticker}</span>
+        <div class="row-actions">
+          <button class="refresh-btn" data-ticker="${item.ticker}">Refresh</button>
+          <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+        </div>
+      </div>
+      <div class="ticker-insights loading">Loading analysis...</div>
+    `;
+    const insContainer = li.querySelector(".ticker-insights");
+    const refreshBtn = li.querySelector(".refresh-btn");
+    refreshBtn.addEventListener("click", async () => {
+      await forceRefreshTickerInsights(item.ticker, insContainer, refreshBtn);
+    });
+    li.querySelector(".rm-btn").addEventListener("click", async () => {
       await api(`/api/v1/users/watchlist/${encodeURIComponent(item.ticker)}`, "DELETE");
+      clearCachedTickerInsights(item.ticker);
       await refreshWatchlist();
     });
     els.watchlistList.appendChild(li);
+
+    const cached = getCachedTickerInsights(item.ticker);
+    if (cached) {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, cached);
+      return;
+    }
+    fetchTickerInsights(item.ticker).then(ins => {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, ins);
+    });
   });
 }
 
@@ -205,12 +380,40 @@ async function refreshPortfolio() {
   els.portfolioList.innerHTML = "";
   items.forEach(item => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${item.ticker} | qty ${item.quantity} | avg ${item.avg_buy_price}</span><button data-ticker="${item.ticker}">Remove</button>`;
-    li.querySelector("button").addEventListener("click", async () => {
+    li.className = "ticker-row";
+    li.innerHTML = `
+      <div class="ticker-header">
+        <span class="ticker-name">${item.ticker}</span>
+        <span class="ticker-meta">qty ${item.quantity} &middot; avg ₹${Number(item.avg_buy_price).toFixed(2)}</span>
+        <div class="row-actions">
+          <button class="refresh-btn" data-ticker="${item.ticker}">Refresh</button>
+          <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+        </div>
+      </div>
+      <div class="ticker-insights loading">Loading analysis...</div>
+    `;
+    const insContainer = li.querySelector(".ticker-insights");
+    const refreshBtn = li.querySelector(".refresh-btn");
+    refreshBtn.addEventListener("click", async () => {
+      await forceRefreshTickerInsights(item.ticker, insContainer, refreshBtn);
+    });
+    li.querySelector(".rm-btn").addEventListener("click", async () => {
       await api(`/api/v1/users/portfolio/${encodeURIComponent(item.ticker)}`, "DELETE");
+      clearCachedTickerInsights(item.ticker);
       await refreshPortfolio();
     });
     els.portfolioList.appendChild(li);
+
+    const cached = getCachedTickerInsights(item.ticker);
+    if (cached) {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, cached);
+      return;
+    }
+    fetchTickerInsights(item.ticker).then(ins => {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, ins);
+    });
   });
 }
 

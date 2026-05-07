@@ -1,30 +1,79 @@
+import numpy as np
+
+
+def _safe_loc(df, key):
+    return df.loc[key] if key in df.index else df.iloc[0] * np.nan
+
+
+def _first(series):
+    if series is None or len(series) == 0:
+        return np.nan
+    return series.iloc[0]
+
+
+def _safe_div(a, b):
+    if b in [0, None] or (isinstance(b, float) and np.isnan(b)):
+        return np.nan
+    if isinstance(a, float) and np.isnan(a):
+        return np.nan
+    return a / b
+
+
+def _is_bfsi(info):
+    sector = str((info or {}).get("sector", "")).lower()
+    industry = str((info or {}).get("industry", "")).lower()
+    text = f"{sector} {industry}"
+    return any(k in text for k in ["bank", "financial", "insurance", "nbfc"])
+
+
+def _best_effort_ebit(income_a, info):
+    ebit = _safe_loc(income_a, "EBIT")
+    if not np.isnan(_first(ebit)):
+        return ebit
+
+    # Banking/financial statements often omit EBIT; use operating/pretax proxy if available.
+    for key in ["Operating Income", "Pretax Income"]:
+        proxy = _safe_loc(income_a, key)
+        if not np.isnan(_first(proxy)):
+            return proxy
+
+    if _is_bfsi(info):
+        return income_a.iloc[0] * np.nan
+
+    return ebit
+
+
 def health_indicators(balance_a, income_a, info):
-    debt = balance_a.loc["Total Debt"]
-    equity = balance_a.loc["Stockholders Equity"]
-    debt_to_equity = debt.iloc[0] / equity.iloc[0]
+    debt = _safe_loc(balance_a, "Total Debt")
+    equity = _safe_loc(balance_a, "Stockholders Equity")
+    debt_to_equity = _safe_div(_first(debt), _first(equity))
 
-    ebit = income_a.loc["EBIT"]
-    interest = income_a.loc["Interest Expense"]
-    interest_coverage = ebit.iloc[0] / interest.iloc[0]
+    ebit = _best_effort_ebit(income_a, info)
+    interest = _safe_loc(income_a, "Interest Expense")
+    interest_coverage = _safe_div(_first(ebit), _first(interest))
 
-    current_assets = balance_a.loc["Current Assets"]
-    current_liab = balance_a.loc["Current Liabilities"]
-    current_ratio = current_assets.iloc[0] / current_liab.iloc[0]
+    current_assets = _safe_loc(balance_a, "Current Assets")
+    current_liab = _safe_loc(balance_a, "Current Liabilities")
+    current_ratio = _safe_div(_first(current_assets), _first(current_liab))
 
-    retained = balance_a.loc["Retained Earnings"]
-    total_assets = balance_a.loc["Total Assets"]
-    total_liab = balance_a.loc["Total Liabilities Net Minority Interest"]
+    retained = _safe_loc(balance_a, "Retained Earnings")
+    total_assets = _safe_loc(balance_a, "Total Assets")
+    total_liab = _safe_loc(balance_a, "Total Liabilities Net Minority Interest")
+    revenue = _safe_loc(income_a, "Total Revenue")
 
     wc = current_assets - current_liab
-    market_cap = info["marketCap"]
+    market_cap = (info or {}).get("marketCap", np.nan)
+    total_assets_0 = _first(total_assets)
 
-    altman_z = (
-        1.2 * (wc.iloc[0] / total_assets.iloc[0]) +
-        1.4 * (retained.iloc[0] / total_assets.iloc[0]) +
-        3.3 * (ebit.iloc[0] / total_assets.iloc[0]) +
-        0.6 * (market_cap / total_liab.iloc[0]) +
-        1.0 * (income_a.loc["Total Revenue"].iloc[0] / total_assets.iloc[0])
-    )
+    altman_z = np.nan
+    if not np.isnan(total_assets_0):
+        altman_z = (
+            1.2 * _safe_div(_first(wc), total_assets_0) +
+            1.4 * _safe_div(_first(retained), total_assets_0) +
+            3.3 * _safe_div(_first(ebit), total_assets_0) +
+            0.6 * _safe_div(market_cap, _first(total_liab)) +
+            1.0 * _safe_div(_first(revenue), total_assets_0)
+        )
 
     return {
         "debt_to_equity": debt_to_equity,

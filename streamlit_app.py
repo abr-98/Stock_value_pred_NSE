@@ -267,6 +267,8 @@ def _find_web_tool(tools_by_name: dict[str, Any]):
 
 
 def _summarize_web_payload(payload: Any) -> str:
+    sources = []
+
     if isinstance(payload, list):
         lines = []
         for item in payload[:3]:
@@ -274,12 +276,26 @@ def _summarize_web_payload(payload: Any) -> str:
                 title = item.get("title") or item.get("name") or "Untitled"
                 url = item.get("url") or item.get("link") or ""
                 snippet = item.get("content") or item.get("snippet") or ""
-                lines.append(f"- {title}\n  {url}\n  {str(snippet)[:280]}")
+                lines.append(f"- {title}: {str(snippet)[:220]}")
+                if url:
+                    sources.append(url)
             else:
                 lines.append(f"- {str(item)[:320]}")
-        return "\n".join(lines)
+        source_lines = []
+        for idx, src in enumerate(sources[:5], start=1):
+            source_lines.append(f"{idx}. {src}")
+        summary = "\n".join(lines)
+        if source_lines:
+            summary += "\n\nSources:\n" + "\n".join(source_lines)
+        return summary
     if isinstance(payload, dict):
-        return str({k: payload.get(k) for k in list(payload.keys())[:6]})
+        title = payload.get("title") or payload.get("name") or "Web result"
+        snippet = payload.get("content") or payload.get("snippet") or "Relevant context retrieved from the web."
+        url = payload.get("url") or payload.get("link") or ""
+        result = f"- {title}: {str(snippet)[:220]}"
+        if url:
+            result += f"\n\nSources:\n1. {url}"
+        return result
     return str(payload)
 
 
@@ -294,9 +310,8 @@ def _web_fallback_context(user_input: str, failed_tools: list[str], tools_by_nam
         if not summarized.strip():
             return ""
         return (
-            "\n\nFallback web context used because some tools failed ("
-            + ", ".join(failed_tools)
-            + "):\n"
+            "\n\nI could not fetch some specialized internal analysis for this request, "
+            "so here is a concise update based on recent public sources:\n"
             + summarized
         )
     except Exception:
@@ -646,11 +661,11 @@ def _run_direct_tools(required_tools: list[str], user_input: str, force_refresh_
             payload = _run_async(tool.ainvoke(tool_args))
             called_tools.append(tool_name)
             direct_results.append(f"Tool {tool_name} output:\n{_format_direct_tool_result(tool_name, payload)}")
-        except Exception as exc:
+        except Exception:
             failed_tools.append(tool_name)
             direct_results.append(
-                f"Tool {tool_name} failed with error: {str(exc)}. "
-                "Continue with available context and avoid stopping the response."
+                "Some specialized analysis components were unavailable for this symbol. "
+                "Continue using available analysis and validated public sources."
             )
 
     if failed_tools:
@@ -724,12 +739,12 @@ def _ask_graph(user_input: str, force_refresh_qna: bool):
                 config={"configurable": {"thread_id": st.session_state["thread_id"]}},
             )
         )
-    except Exception as exc:
+    except Exception:
         tools_by_name = st.session_state.get("tools_by_name", {})
         web_context = _web_fallback_context(user_input, failed_tools or ["graph_invoke"], tools_by_name)
         fallback_text = (
-            "Some analysis tools failed during this turn, so I continued with a fallback path."
-            f"\nError summary: {str(exc)}"
+            "I could not complete every internal analysis step for this request, "
+            "but I can still provide a useful answer based on available tools and public information."
         )
         if web_context:
             fallback_text += "\n\n" + web_context
