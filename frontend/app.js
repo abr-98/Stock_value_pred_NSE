@@ -174,17 +174,81 @@ async function refreshUsage() {
   els.usageCost.textContent = Number(usage.total_cost || 0).toFixed(6);
 }
 
+async function fetchTickerInsights(ticker) {
+  try {
+    const [stockResp, memResp] = await Promise.all([
+      api(`/api/v1/stock/analyze/${encodeURIComponent(ticker)}`),
+      api(`/api/v1/memory/analyze/${encodeURIComponent(ticker)}`),
+    ]);
+    const signals = (stockResp.data && stockResp.data.signals) ? stockResp.data.signals : [];
+    const techSignal = signals.find(s => s.agent === "technical") || {};
+    const sentSignal = signals.find(s => s.agent === "sentiment") || {};
+    const finalScore = stockResp.data ? (stockResp.data.final_score ?? null) : null;
+    const report = memResp.report || {};
+    return {
+      technical_score: techSignal.score ?? null,
+      sentiment_score: sentSignal.score ?? null,
+      final_score: finalScore,
+      avg_forward_return: report.avg_forward_return ?? null,
+      positive_ratio: report.positive_ratio ?? null,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function scoreColor(val) {
+  if (val === null || val === undefined || isNaN(val)) return "badge-neutral";
+  return val >= 0 ? "badge-positive" : "badge-negative";
+}
+
+function fmtScore(val) {
+  if (val === null || val === undefined || isNaN(val)) return "–";
+  return Number(val).toFixed(3);
+}
+
+function fmtPct(val) {
+  if (val === null || val === undefined || isNaN(val)) return "–";
+  return (Number(val) * 100).toFixed(2) + "%";
+}
+
+function renderInsights(container, ins) {
+  if (!ins) {
+    container.innerHTML = `<span class="badge badge-neutral">Analysis unavailable</span>`;
+    return;
+  }
+  container.innerHTML = `
+    <span class="badge ${scoreColor(ins.technical_score)}" title="Technical score">Tech ${fmtScore(ins.technical_score)}</span>
+    <span class="badge ${scoreColor(ins.sentiment_score)}" title="Sentiment score">Sent ${fmtScore(ins.sentiment_score)}</span>
+    <span class="badge ${scoreColor(ins.final_score)}" title="Overall signal score">Signal ${fmtScore(ins.final_score)}</span>
+    <span class="badge ${scoreColor(ins.avg_forward_return)}" title="Avg future return from memory patterns">Avg Return ${fmtPct(ins.avg_forward_return)}</span>
+    <span class="badge badge-neutral" title="Ratio of historically positive outcomes">+ve Ratio ${fmtPct(ins.positive_ratio)}</span>
+  `;
+}
+
 async function refreshWatchlist() {
   const items = await api("/api/v1/users/watchlist");
   els.watchlistList.innerHTML = "";
   items.forEach(item => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${item.ticker}</span><button data-ticker="${item.ticker}">Remove</button>`;
-    li.querySelector("button").addEventListener("click", async () => {
+    li.className = "ticker-row";
+    li.innerHTML = `
+      <div class="ticker-header">
+        <span class="ticker-name">${item.ticker}</span>
+        <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+      </div>
+      <div class="ticker-insights loading">Loading analysis…</div>
+    `;
+    li.querySelector(".rm-btn").addEventListener("click", async () => {
       await api(`/api/v1/users/watchlist/${encodeURIComponent(item.ticker)}`, "DELETE");
       await refreshWatchlist();
     });
     els.watchlistList.appendChild(li);
+    const insContainer = li.querySelector(".ticker-insights");
+    fetchTickerInsights(item.ticker).then(ins => {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, ins);
+    });
   });
 }
 
@@ -205,12 +269,25 @@ async function refreshPortfolio() {
   els.portfolioList.innerHTML = "";
   items.forEach(item => {
     const li = document.createElement("li");
-    li.innerHTML = `<span>${item.ticker} | qty ${item.quantity} | avg ${item.avg_buy_price}</span><button data-ticker="${item.ticker}">Remove</button>`;
-    li.querySelector("button").addEventListener("click", async () => {
+    li.className = "ticker-row";
+    li.innerHTML = `
+      <div class="ticker-header">
+        <span class="ticker-name">${item.ticker}</span>
+        <span class="ticker-meta">qty ${item.quantity} &middot; avg ₹${Number(item.avg_buy_price).toFixed(2)}</span>
+        <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+      </div>
+      <div class="ticker-insights loading">Loading analysis…</div>
+    `;
+    li.querySelector(".rm-btn").addEventListener("click", async () => {
       await api(`/api/v1/users/portfolio/${encodeURIComponent(item.ticker)}`, "DELETE");
       await refreshPortfolio();
     });
     els.portfolioList.appendChild(li);
+    const insContainer = li.querySelector(".ticker-insights");
+    fetchTickerInsights(item.ticker).then(ins => {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, ins);
+    });
   });
 }
 
