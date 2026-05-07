@@ -213,6 +213,12 @@ button.ghost {
   gap: 8px;
 }
 
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .ticker-name {
   font-weight: 700;
   font-size: 14px;
@@ -228,6 +234,20 @@ button.ghost {
   width: auto;
   padding: 5px 10px;
   font-size: 12px;
+}
+
+.refresh-btn {
+  width: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .ticker-insights {

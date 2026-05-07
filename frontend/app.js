@@ -6,6 +6,47 @@ const state = {
   streamlitUrl: localStorage.getItem("stockStreamlitUrl") || "http://localhost:8501",
 };
 
+function insightsCacheKey() {
+  const uid = state.user && state.user.id ? String(state.user.id) : "anon";
+  return `stockTickerInsights:${uid}`;
+}
+
+function loadInsightsCache() {
+  try {
+    return JSON.parse(localStorage.getItem(insightsCacheKey()) || "{}") || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveInsightsCache(cacheObj) {
+  localStorage.setItem(insightsCacheKey(), JSON.stringify(cacheObj || {}));
+}
+
+function getCachedTickerInsights(ticker) {
+  const cache = loadInsightsCache();
+  return cache[ticker] || null;
+}
+
+function setCachedTickerInsights(ticker, value) {
+  const cache = loadInsightsCache();
+  cache[ticker] = value;
+  saveInsightsCache(cache);
+}
+
+function clearCachedTickerInsights(ticker) {
+  const cache = loadInsightsCache();
+  if (Object.prototype.hasOwnProperty.call(cache, ticker)) {
+    delete cache[ticker];
+    saveInsightsCache(cache);
+  }
+}
+
+function toNum(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 const PAGE_LABELS = {
   account: "Account",
   home: "Home",
@@ -174,24 +215,43 @@ async function refreshUsage() {
   els.usageCost.textContent = Number(usage.total_cost || 0).toFixed(6);
 }
 
-async function fetchTickerInsights(ticker) {
+async function fetchTickerInsights(ticker, forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = getCachedTickerInsights(ticker);
+    if (cached) {
+      return cached;
+    }
+  }
+
   try {
     const [stockResp, memResp] = await Promise.all([
       api(`/api/v1/stock/analyze/${encodeURIComponent(ticker)}`),
       api(`/api/v1/memory/analyze/${encodeURIComponent(ticker)}`),
     ]);
-    const signals = (stockResp.data && stockResp.data.signals) ? stockResp.data.signals : [];
-    const techSignal = signals.find(s => s.agent === "technical") || {};
-    const sentSignal = signals.find(s => s.agent === "sentiment") || {};
-    const finalScore = stockResp.data ? (stockResp.data.final_score ?? null) : null;
-    const report = memResp.report || {};
-    return {
-      technical_score: techSignal.score ?? null,
-      sentiment_score: sentSignal.score ?? null,
-      final_score: finalScore,
-      avg_forward_return: report.avg_forward_return ?? null,
-      positive_ratio: report.positive_ratio ?? null,
+
+    const stockData = (stockResp && stockResp.data) ? stockResp.data : {};
+    const signals = Array.isArray(stockData.signals)
+      ? stockData.signals
+      : (Array.isArray(stockResp && stockResp.signals) ? stockResp.signals : []);
+
+    const techSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "technical") || {};
+    const sentSignal = signals.find(s => String(s && (s.agent || s.name || "")).toLowerCase() === "sentiment") || {};
+
+    const memoryReport = (memResp && memResp.report) ? memResp.report : {};
+    const memoryAnalysis = (memoryReport && typeof memoryReport.analysis === "object" && memoryReport.analysis !== null)
+      ? memoryReport.analysis
+      : memoryReport;
+
+    const result = {
+      technical_score: toNum(techSignal.score ?? techSignal.signal_score),
+      sentiment_score: toNum(sentSignal.score ?? sentSignal.signal_score),
+      final_score: toNum(stockData.final_score ?? stockData.signal_score ?? stockData.aggregated_score ?? stockResp.final_score),
+      avg_forward_return: toNum(memoryAnalysis.avg_forward_return ?? memoryAnalysis.avg_return ?? memoryAnalysis.average_return),
+      positive_ratio: toNum(memoryAnalysis.positive_ratio ?? memoryAnalysis.win_rate ?? memoryAnalysis.positive_outcome_ratio),
     };
+
+    setCachedTickerInsights(ticker, result);
+    return result;
   } catch (e) {
     return null;
   }
@@ -226,6 +286,27 @@ function renderInsights(container, ins) {
   `;
 }
 
+async function forceRefreshTickerInsights(ticker, container, refreshButton) {
+  if (container) {
+    container.classList.add("loading");
+    container.textContent = "Refreshing analysis...";
+  }
+  if (refreshButton) {
+    refreshButton.disabled = true;
+    refreshButton.textContent = "Refreshing...";
+  }
+
+  const ins = await fetchTickerInsights(ticker, true);
+  if (container) {
+    container.classList.remove("loading");
+    renderInsights(container, ins);
+  }
+  if (refreshButton) {
+    refreshButton.disabled = false;
+    refreshButton.textContent = "Refresh";
+  }
+}
+
 async function refreshWatchlist() {
   const items = await api("/api/v1/users/watchlist");
   els.watchlistList.innerHTML = "";
@@ -235,16 +316,31 @@ async function refreshWatchlist() {
     li.innerHTML = `
       <div class="ticker-header">
         <span class="ticker-name">${item.ticker}</span>
-        <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+        <div class="row-actions">
+          <button class="refresh-btn" data-ticker="${item.ticker}">Refresh</button>
+          <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+        </div>
       </div>
-      <div class="ticker-insights loading">Loading analysis…</div>
+      <div class="ticker-insights loading">Loading analysis...</div>
     `;
+    const insContainer = li.querySelector(".ticker-insights");
+    const refreshBtn = li.querySelector(".refresh-btn");
+    refreshBtn.addEventListener("click", async () => {
+      await forceRefreshTickerInsights(item.ticker, insContainer, refreshBtn);
+    });
     li.querySelector(".rm-btn").addEventListener("click", async () => {
       await api(`/api/v1/users/watchlist/${encodeURIComponent(item.ticker)}`, "DELETE");
+      clearCachedTickerInsights(item.ticker);
       await refreshWatchlist();
     });
     els.watchlistList.appendChild(li);
-    const insContainer = li.querySelector(".ticker-insights");
+
+    const cached = getCachedTickerInsights(item.ticker);
+    if (cached) {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, cached);
+      return;
+    }
     fetchTickerInsights(item.ticker).then(ins => {
       insContainer.classList.remove("loading");
       renderInsights(insContainer, ins);
@@ -274,16 +370,31 @@ async function refreshPortfolio() {
       <div class="ticker-header">
         <span class="ticker-name">${item.ticker}</span>
         <span class="ticker-meta">qty ${item.quantity} &middot; avg ₹${Number(item.avg_buy_price).toFixed(2)}</span>
-        <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+        <div class="row-actions">
+          <button class="refresh-btn" data-ticker="${item.ticker}">Refresh</button>
+          <button class="rm-btn" data-ticker="${item.ticker}">Remove</button>
+        </div>
       </div>
-      <div class="ticker-insights loading">Loading analysis…</div>
+      <div class="ticker-insights loading">Loading analysis...</div>
     `;
+    const insContainer = li.querySelector(".ticker-insights");
+    const refreshBtn = li.querySelector(".refresh-btn");
+    refreshBtn.addEventListener("click", async () => {
+      await forceRefreshTickerInsights(item.ticker, insContainer, refreshBtn);
+    });
     li.querySelector(".rm-btn").addEventListener("click", async () => {
       await api(`/api/v1/users/portfolio/${encodeURIComponent(item.ticker)}`, "DELETE");
+      clearCachedTickerInsights(item.ticker);
       await refreshPortfolio();
     });
     els.portfolioList.appendChild(li);
-    const insContainer = li.querySelector(".ticker-insights");
+
+    const cached = getCachedTickerInsights(item.ticker);
+    if (cached) {
+      insContainer.classList.remove("loading");
+      renderInsights(insContainer, cached);
+      return;
+    }
     fetchTickerInsights(item.ticker).then(ins => {
       insContainer.classList.remove("loading");
       renderInsights(insContainer, ins);
